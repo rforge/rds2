@@ -27,7 +27,7 @@
 #' @seealso 
 #' @examples
 #' 
-
+NA
 
 
 #' Utility functions for creating snowball matrix.
@@ -199,7 +199,7 @@ estimate.rds<- function (data, init, const, arc, maxit=20000, ...) {
 
 
 
-#' 
+#' Main function in rds2 package. Returns the ML estimate of population size and degree distribution.
 #' @param data 
 #' @param Sij 
 #' @param init 
@@ -212,7 +212,7 @@ estimate.rds<- function (data, init, const, arc, maxit=20000, ...) {
 #' @return 
 #' @author johnros
 #' @export
-#' @example rm(list=ls())
+#' @example 
 #' data(Cornell)
 #' Cornell<- estimate.rds2(data=data.degree, , Sij = data.Sjt, const=50, arc=FALSE, maxit=10000)
 #' comparison(Cornell)
@@ -281,6 +281,3 @@ estimate.rds2<- function (data, Sij, init, const, arc, maxit=10000, theta, ...) 
 }
 
 
-require(plyr)
-require(roxygen2)
-roxygenize(package.dir = '/home/johnros/workspace/rds2/pkg/', overwrite = TRUE )
