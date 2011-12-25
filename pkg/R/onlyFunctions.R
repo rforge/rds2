@@ -281,26 +281,6 @@ estimate.rds2<- function (data, Sij, init, const, arc, maxit=10000, theta, ...) 
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+require(plyr)
+require(roxygen2)
+roxygenize(package.dir = '/home/johnros/workspace/rds2/pkg/', overwrite = TRUE )
