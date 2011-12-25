@@ -1,42 +1,21 @@
-\name{rds2-package}
-\alias{rds2-package}
-\alias{rds2}
 \docType{package}
-\title{
-What the package does (short line)
-~~ package title ~~
-}
+\name{rds2-package}
+\alias{rds2}
+\alias{rds2-package}
+\title{Population size estimation for despondant driven sampling}
 \description{
-More about what it does (maybe more than one line)
-~~ A concise (1-5 lines) description of the package ~~
+  Estimates oppulation size and degree distribution in
+  respondant driven samples(RDS).
 }
 \details{
-\tabular{ll}{
-Package: \tab rds2\cr
-Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2011-12-25\cr
-License: \tab What license is it under?\cr
-}
-~~ An overview of how to use the package, including the most important ~~
-~~ functions ~~
+  \tabular{ll}{ Package: \tab rds2\cr Type: \tab Package\cr
+  Version: \tab 0.5\cr Date: \tab 2011-12-25\cr License:
+  \tab GPL (>= 2)\cr }
+
+  Maximum likelihood estimation of population size using
+  the methodology in [cite].
 }
 \author{
-Who wrote it
+  Jonathan Rosenblatt
+}
 
-Maintainer: Who to complain to <yourfault@somewhere.net>
-~~ The author and/or maintainer of the package ~~
-}
-\references{
-~~ Literature or other references for background information ~~
-}
-~~ Optionally other standard keywords, one per line, from file KEYWORDS in ~~
-~~ the R documentation directory ~~
-\keyword{ package }
-\seealso{
-~~ Optional links to other man pages, e.g. ~~
-~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
-}
-\examples{
-~~ simple examples of the most important functions ~~
-}
