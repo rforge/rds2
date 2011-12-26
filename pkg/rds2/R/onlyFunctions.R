@@ -17,7 +17,6 @@
 #' @author Jonathan Rosenblatt 
 NA
 
-
 #' Utility functions for creating snowball matrix.
 #' @param data The sample
 #' @return The sum of degrees for each rank 
@@ -28,6 +27,26 @@ sum.ranks<- function(data){
 	result<- as.numeric(rownames(data.table))*c(data.table)
 	return(result)
 }
+
+
+
+#' Make the Sij matrix assuming no droouts from the snowball
+#' @param data 
+#' @return TBC
+#' @author johnros
+#' @export
+make.Sij<- function(data){
+	result<- matrix(0, ncol=length(data), nrow=max(data))
+	for (i in 1:(length(data)-1)){ result[data[i],i+1]<- result[data[i],i+1]+1 }  
+	result<- t(apply(result, 1 , cumsum))
+	non.empty.ind<- apply(result, 1, sum)!=0
+	.row.names<- as.character(seq(along.with=non.empty.ind)[non.empty.ind])
+	result<- result[non.empty.ind,]
+	rownames(result)<- .row.names
+	return(result)
+}
+
+
 
 #' Inverts the map of theta to the real line.  
 #' @param qnorm.theta 
@@ -90,7 +109,17 @@ comparison <- function (estimation) {
 
 
 
-
+#' Compares the output of the optimizaton for different initialization values.
+#' @param Sij 
+#' @return Used for creating the Snowball size given an Sij matrix
+#' @author johnros
+#' @export
+compute.S<- function(Sij){
+	result<- apply(Sij, 2, sum)
+	non.null.ind<- cumsum(result!=0)
+	result[non.null.ind==0]<- 1    
+	return(as.integer(result))
+}
 
 
 
@@ -106,18 +135,24 @@ comparison <- function (estimation) {
 
 
 
-
 #' Main function in rds2 package. Returns the ML estimate of population size and degree distribution. 
+#' @param func 
 #' @param data 
 #' @param init 
 #' @param const 
 #' @param arc 
 #' @param maxit 
+#' @param theta.range 
+#' @param theta.minimum 
 #' @param ... 
 #' @return TBC 
-#' @author Jonathan Rosenblatt
+#' @author johnros
 #' @export
-estimate.rds<- function (data, init, const, arc, maxit=20000, ...) {
+#' @useDynLib rds2
+#' @examples 
+#' data(simulation)
+#' estimate.rds(unlist(data3[1,]), const=20, arc=FALSE)
+estimate.rds<- function (data, init, const, arc=FALSE, maxit=1000,...) {
 	# Look for degrees in the data, so their estimates are nony vanishing
 	N.j<- rep(0, max(data)) 
 	uniques<- unique(data)
@@ -158,6 +193,11 @@ estimate.rds<- function (data, init, const, arc, maxit=20000, ...) {
 	
 	if(missing(init)) { 
 		init<- list( 
+				#one= c(log.c=log.c, qnorm.theta=qnorm.theta(1,const), log(rep(10*cap, param.size))+1),
+				#two= c(log.c=log.c, qnorm.theta=qnorm.theta(1,const), log(rep(initial.Nj,param.size))+1),
+				#three= c(log.c=log.c, qnorm.theta=qnorm.theta(1,const), log(runif(min=cap, max=3*cap ,n=param.size))+1) ,
+				#four= c(log.c=log.c, qnorm.theta=qnorm.theta(1,const), log(cap.arcs)+1),
+				#five= c(log.c=log.c, qnorm.theta=qnorm.theta(1,const), log(rep(max.cap.arcs, param.size))+1 ),
 				six0.2= c(log.c=log.c, qnorm.theta=qnorm.theta(0.2,const), log(data.table)+1 ),
 				#six0.5= c(log.c=log.c, qnorm.theta=qnorm.theta(0.5,const), log(data.table)+1 ),
 				#six0.9= c(log.c=log.c, qnorm.theta=qnorm.theta(0.9,const), log(data.table)+1 ),
@@ -185,7 +225,9 @@ estimate.rds<- function (data, init, const, arc, maxit=20000, ...) {
 
 
 
-#' Main function in rds2 package. Returns the ML estimate of population size and degree distribution.
+
+
+#' Same as estimate.rds, but for a fixed theta.
 #' @param data 
 #' @param Sij 
 #' @param init 
@@ -198,8 +240,9 @@ estimate.rds<- function (data, init, const, arc, maxit=20000, ...) {
 #' @author johnros
 #' @export 
 #' @examples
-#' rnorm(1) 
-estimate.rds2<- function (data, Sij, init, const, arc, maxit=10000, theta, ...) {
+#' data(brazil)
+#' estimate.rds2(data=data.degree, , Sij = data.Sjt, const=50, arc=FALSE, maxit=1000, theta = 1)
+estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta, ...) {
 	# Look for degrees in the data, so their estimates are nony vanishing
 	N.j<- rep(0, max(data)) 
 	uniques<- unique(data)
