@@ -5,7 +5,7 @@
   make.Sij(data)
 }
 \arguments{
-  \item{data}{}
+  \item{data}{ An integer vector of the degrees of each individual sampled.}
 }
 \value{
   TBC

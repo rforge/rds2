@@ -1,0 +1,18 @@
+                        Snowball matrix for rds2 package
+                        Degrees of individuals sampled at each period.
+                        Simulated snowball sample with no dropouts.
+comparison              Compares the output of the optimizaton for
+                        different initialization values.
+compute.S               Compares the output of the optimizaton for
+                        different initialization values.
+estimate.rds2           Same as estimate.rds, but for a fixed theta.
+estimate.rds3           Main function in rds2 package. Returns the ML
+                        estimate of population size and degree
+                        distribution.
+inv.qnorm.theta         Inverts the map of theta to the real line.
+make.Sij                Make the Sij matrix assuming no droouts from
+                        the snowball
+qnorm.theta             Maps the theta parameter to the real line.
+rds2-package            Population size estimation for despondant
+                        driven sampling
+sum.ranks               Utility functions for creating snowball matrix.

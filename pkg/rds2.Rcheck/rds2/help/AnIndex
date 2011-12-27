@@ -1,0 +1,10 @@
+rds2-package	rds2-package
+comparison	comparison
+compute.S	compute.S
+estimate.rds2	estimate.rds2
+estimate.rds3	estimate.rds3
+inv.qnorm.theta	inv.qnorm.theta
+make.Sij	make.Sij
+qnorm.theta	qnorm.theta
+rds2	rds2-package
+sum.ranks	sum.ranks

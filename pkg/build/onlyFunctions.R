@@ -223,6 +223,7 @@ estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta,
 #' @author Jonathan Rosenblatt
 #' @useDynLib rds2
 #' @export
+#' @examples
 #' data(simulation)
 #' estimate.rds3(temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,10), arc = FALSE, maxit = 1000, const = 0.5, theta.minimum = -0.5, theta.range = 2)
 estimate.rds3<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial.thetas, theta.minimum, theta.range, ...) {

@@ -5,7 +5,7 @@
   compute.S(Sij)
 }
 \arguments{
-  \item{Sij}{}
+  \item{Sij}{ An integer matrix of the counts of individuals with rank j at sampling period t. Row names correspond to the degrees.}
 }
 \value{
   Used for creating the Snowball size given an Sij matrix

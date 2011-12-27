@@ -132,7 +132,6 @@ compute.S<- function(Sij){
 #' @param arc 
 #' @param maxit 
 #' @param theta 
-#' @param ... 
 #' @return TBC 
 #' @author johnros
 #' @useDynLib rds2
@@ -140,7 +139,7 @@ compute.S<- function(Sij){
 #' @examples
 #' data(brazil)
 #' estimate.rds2(data=data.degree, , Sij = data.Sjt, const=50, arc=FALSE, maxit=1000, theta = 1)
-estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta, ...) {
+estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta) {
 	# Look for degrees in the data, so their estimates are nony vanishing
 	N.j<- rep(0, max(data)) 
 	uniques<- unique(data)
@@ -189,7 +188,7 @@ estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta,
 		)}
 	
 	likelihood.optim<-lapply(init, function(x) {
-				try(optim(par=x, fn=likelihood.wrap1, control=list(fnscale=-1, maxit=maxit),...)) 
+				try(optim(par=x, fn=likelihood.wrap1, control=list(fnscale=-1, maxit=maxit))) 
 			}  ) 
 	
 	prepare.result<- function(x){    
@@ -219,13 +218,13 @@ estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta,
 #' @param initial.thetas 
 #' @param theta.minimum 
 #' @param theta.range 
-#' @param ... 
 #' @author Jonathan Rosenblatt
 #' @useDynLib rds2
 #' @export
+#' @examples
 #' data(simulation)
-#' estimate.rds3(temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,10), arc = FALSE, maxit = 1000, const = 0.5, theta.minimum = -0.5, theta.range = 2)
-estimate.rds3<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial.thetas, theta.minimum, theta.range, ...) {
+#' estimate.rds3(data= temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,10), arc = FALSE, maxit = 1000, const = 0.5, theta.minimum = -0.5, theta.range = 2)
+estimate.rds3<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial.thetas, theta.minimum, theta.range) {
 	# Look for degrees in the data, so their estimates are non vanishing
 	N.j<- rep(0, max(data)) 
 	uniques<- unique(data)
@@ -281,7 +280,7 @@ estimate.rds3<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initia
 	}
 	
 	likelihood.optim<-lapply(init, function(x) {
-				try(optim(par=x, fn=likelihood.wrap, control=list(fnscale=-1, maxit=maxit),...)) 
+				try(optim(par=x, fn=likelihood.wrap, control=list(fnscale=-1, maxit=maxit))) 
 			}  ) 
 	
 	prepare.result<- function(x){

@@ -5,7 +5,7 @@
   sum.ranks(data)
 }
 \arguments{
-  \item{data}{The sample}
+  \item{data}{ An integer vector of the degrees of each individual sampled.}
 }
 \value{
   The sum of degrees for each rank
