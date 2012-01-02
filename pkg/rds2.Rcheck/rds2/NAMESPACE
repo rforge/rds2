@@ -1,7 +1,0 @@
-export(comparison)
-export(compute.S)
-export(estimate.rds2)
-export(estimate.rds3)
-export(make.Sij)
-export(sum.ranks)
-useDynLib(rds2)
