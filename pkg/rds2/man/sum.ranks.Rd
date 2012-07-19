@@ -14,6 +14,6 @@
   Utility functions for creating snowball matrix.
 }
 \author{
-  Jonathan Rosnblatt
+  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
 }
 

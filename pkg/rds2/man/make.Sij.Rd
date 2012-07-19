@@ -1,6 +1,6 @@
 \name{make.Sij}
 \alias{make.Sij}
-\title{Make the Sij matrix assuming no droouts from the snowball}
+\title{Make the \eqn{Sij} matrix assuming no drop outs during sampling }
 \usage{
   make.Sij(data)
 }
@@ -8,12 +8,15 @@
   \item{data}{ An integer vector of the degrees of each individual sampled.}
 }
 \value{
-  TBC
+  A matrix with the number of individuals with degree i (as row names) at sampling stage j (as column). 
 }
 \description{
-  Make the Sij matrix assuming no droouts from the snowball
+  Make the \eqn{Sij} matrix from the sample path, assuming no drop outs during sampling.
 }
 \author{
-  johnros
+  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
+}
+\seealso{
+  \code{\link{estimate.rds}}  
 }
 

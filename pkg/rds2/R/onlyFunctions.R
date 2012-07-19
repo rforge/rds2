@@ -139,7 +139,7 @@ compute.S<- function(Sij){
 #' @examples
 #' data(brazil)
 #' estimate.rds2(data=data.degree, , Sij = data.Sjt, const=50, arc=FALSE, maxit=1000, theta = 1)
-estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta) {
+estimate.rds.fix.theta<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta) {
 	# Look for degrees in the data, so their estimates are nony vanishing
 	N.j<- rep(0, max(data)) 
 	uniques<- unique(data)
@@ -152,17 +152,17 @@ estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta)
 	
 	likelihood.wrap1<- function(par){
 		final.result<- -Inf
-		ccc<- exp(par[1])
+		beta<- exp(par[1])
 		N.j<- rep(0, max(data))
 		N.j[s.uniques]<- exp(tail(par,-1))
 		if(any( N.j[s.uniques] < data.table )) return(final.result)	  
 		
-		if(is.numeric(ccc) && is.numeric(theta) && !is.infinite(theta) && !is.infinite(ccc) ) {
+		if(is.numeric(beta) && is.numeric(theta) && !is.infinite(theta) && !is.infinite(beta) ) {
 			result<- .C("likelihood", 
 					sample=as.integer(data), 
 					Sij=as.integer(as.matrix(Sij)),
 					S=as.integer(S),				  
-					c=as.numeric(ccc), 
+					c=as.numeric(beta), 
 					theta=as.numeric(theta), 
 					Nj=as.numeric(N.j), 
 					constant=as.numeric(const),
@@ -179,11 +179,11 @@ estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta)
 	cap<- max(data)
 	cap.arcs<-  sum.ranks(data)
 	max.cap.arcs<- max(cap.arcs)
-	log.c<- -log(max(sum.ranks(data)*sum(data)) * max(data)) -1
+	log.beta<- -log(max(sum.ranks(data)*sum(data)) * max(data)) -1
 	
 	if(missing(init)) { 
 		init<- list( 
-				six= c(log.c=log.c, log(data.table)+1 )
+				six= c(log.c=log.beta, log(data.table)+1 )
 		
 		)}
 	
@@ -224,7 +224,8 @@ estimate.rds2<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta)
 #' @examples
 #' data(simulation)
 #' estimate.rds3(data= temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,10), arc = FALSE, maxit = 1000, const = 0.5, theta.minimum = -0.5, theta.range = 2)
-estimate.rds3<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial.thetas, theta.minimum, theta.range) {
+
+estimate.rds<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial.thetas, theta.minimum, theta.range) {
 	# Look for degrees in the data, so their estimates are non vanishing
 	N.j<- rep(0, max(data)) 
 	uniques<- unique(data)
@@ -288,7 +289,7 @@ estimate.rds3<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initia
 		if(is.list(x)){
 			N.j[sorted.uniques]<- exp(tail(x$par,-2))
 			result<- list( 
-					c=exp(x$par[[1]]), 
+					beta=exp(x$par[[1]]), 
 					theta=inv.qnorm.theta(x$par[[2]], const=const, range=theta.range, minimum=theta.minimum), 
 					Nj=N.j,
 					iterations=x$counts,
@@ -298,7 +299,9 @@ estimate.rds3<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initia
 	} 
 	## TODO: A) Return only numeric objects
 	
-	return(lapply(likelihood.optim, prepare.result))							
+	temp.result<- lapply(likelihood.optim, prepare.result)
+	final.result<- temp.result[[which.max(sapply(temp.result, function(x) x$likelihood.optimum))]]
+	return(final.result)							
 }
 
 

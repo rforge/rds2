@@ -1,21 +1,26 @@
 \docType{package}
-\name{rds2-package}
-\alias{rds2}
-\alias{rds2-package}
-\title{Population size estimation for despondant driven sampling}
+\name{chords-package}
+\alias{chords}
+\alias{chords-package}
+\title{Population size estimation for respondent driven sampling}
 \description{
-  Estimates oppulation size and degree distribution in
-  respondant driven samples(RDS).
+  Estimates population size and degree distribution in
+  respondent driven samples(RDS).
 }
 \details{
-  \tabular{ll}{ Package: \tab rds2\cr Type: \tab Package\cr
+  \tabular{ll}{ Package: \tab chords\cr Type: \tab Package\cr
   Version: \tab 0.5\cr Date: \tab 2011-12-25\cr License:
   \tab GPL (>= 2)\cr }
 
   Maximum likelihood estimation of population size using
-  the methodology in [cite].
+  the methodology in the reference. See \link{estimate.rds} for details.
 }
 \author{
-  Jonathan Rosenblatt
+  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
+}
+\references{
+	Respondent Driven Sampling as an Epidemic Process
+	Berchenko Y., Rosenblatt J.D., White R.G.,Frost S.D.W. (2012) 
+  \emph{####.}  
 }
 
