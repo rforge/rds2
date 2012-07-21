@@ -1,6 +1,7 @@
 \name{estimate.rds}
 \alias{estimate.rds}
 \alias{estimate.rds.fix.theta}
+\alias{var.theta}
 \title{ ML estimation of population size and degree distribution in respondent driven samples }
 \usage{
   estimate.rds(data, Sij, init, const, arc = FALSE,
@@ -9,6 +10,9 @@
     
      estimate.rds.fix.theta(data, Sij, init, const, arc = FALSE,
     maxit = 10000, theta)
+    
+    var.theta(data, Sij, Njs, theta, beta)
+
 }
 \arguments{
   \item{data}{An integer vector of the degree of each individual sampled (including zeroes).}
@@ -30,18 +34,26 @@
   \item{theta.minimum}{Lower bound on the allowed values of theta.}
 
   \item{theta.range}{Allowed range of theta values. From theta.minimum to theta.minimum+range.}
+  
+  \item{Njs}{Numeric vector of fhe frequecies of degree \eqn{j}.}
+  
+  \item{theta}{Numeric value of \eqn{\theta}}
+  
+  \item{beta}{Numeric value of \eqn{\beta}}
 
 }
 \description{
     ML estimation of population size and degree distribution in respondent driven samples. 
 }
 \value{
-A list with the estimates for each starting value of \eqn{\theta}. Each components includes:
+\code{estimate.rds} and \code{estimate.rds.fix.theta} return a list with the estimates for each starting value of \eqn{\theta}. Each components includes:
 	\item{beta}{See in \emph{details}}
 	\item{theta}{See in \emph{details}}
 	\item{Nj}{See in \emph{details}}
 	\item{iterations}{The number of \code{\link{optim}} iterations until convergence.}
 	\item{likelihood.optimum}{The (log) likelhood at convergence.}	
+  
+\code{var.theta} returns an estimate of the asymptotic variance of \eqn{\theta}.
 }
 \details{
 \code{estimate.rds} performs maximum likelihood estimation of the population
@@ -60,6 +72,8 @@ rds.result<- estimate.rds(temp.data, Sij = make.Sij(temp.data), initial.thetas =
 	arc = FALSE, maxit = 100, const = 0.5, theta.minimum = -0.5, theta.range = 2)
 str(rds.result)
 plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
+var.theta(temp.data, Sij = make.Sij(temp.data), Njs=rds.result$Nj, theta=rds.result$theta, 
+beta=rds.result$c)
 }
 \author{
   Jonathan D. Rosenblatt \email{john.ros@gmail.com}
@@ -67,7 +81,7 @@ plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estima
 \references{
 	Respondent Driven Sampling as an Epidemic Process
 	Berchenko Y., Rosenblatt J.D., White R.G.,Frost S.D.W. (2012) 
-  \emph{####.}  
+  \emph{?}  
 }
 
 

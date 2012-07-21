@@ -305,4 +305,3 @@ estimate.rds<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial
 }
 
 
-
