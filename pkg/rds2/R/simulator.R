@@ -37,16 +37,19 @@ for(i in seq(1, sample.length)){
   # should someone be sampled?
   someone.sampled<- as.logical(rbinom(n=1, size=1, prob=1-sum(probs.vector)))  
     # sample with those probabilities
-  if(someone.sampled){
-    next.sample<- sample(sample.indexes, 1, prob=probs.vector)
+  if(length(sample.indexes)>0 && someone.sampled){
+    if(length(sample.indexes)==1) next.sample<- sample.indexes
+    else next.sample<- sample(sample.indexes, 1, prob=probs.vector)
+    
     sampled[next.sample]<- TRUE
     sampled.degrees[i]<- neighbour.count[[next.sample]]    
-    sample.indexes<- seq(1, network.size)[!sampled]
+    sample.indexes<- seq(1, network.size)[!sampled]    
   }
   else {
     sampled.degrees[i]<- 0
   }  
 }
+tail(sampled.degrees)
 
 require(rds2)
 (estimated.simulation<- estimate.rds3(data=sampled.degrees, Sij=make.Sij(data=sampled.degrees), initial.thetas=c(0.5,1,1.5), const=0.5, theta.minimum=-2, theta.range=4))
