@@ -1,7 +1,0 @@
-export(comparison)
-export(compute.S)
-export(estimate.rds)
-export(estimate.rds.fix.theta)
-export(make.Sij)
-export(sum.ranks)
-useDynLib(chords)
