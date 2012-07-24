@@ -226,7 +226,7 @@ estimate.rds.fix.theta<- function (data, Sij, init, const, arc=FALSE, maxit=1000
 #' estimate.rds3(data= temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,10), arc = FALSE, maxit = 1000, const = 0.5, theta.minimum = -0.5, theta.range = 2)
 
 estimate.rds<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial.thetas, theta.minimum, theta.range) {
-  stopifnot(!all(missing(x=initial.thetas), missing(x=theta.minimum), missing(x=theta.range))))
+  stopifnot(!all(missing(x=initial.thetas), missing(x=theta.minimum), missing(x=theta.range)))
 	# Look for degrees in the data, so their estimates are non vanishing
 	N.j<- rep(0, max(data)) 
 	uniques<- unique(data)

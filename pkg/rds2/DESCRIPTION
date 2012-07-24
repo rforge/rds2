@@ -7,5 +7,4 @@ Author: Jonathan Rosenblatt
 Maintainer: Jonathan Rosenblatt <john.ros@gmail.com>
 Description: Maximum likelihood estimation of population size and degree distribution following [cite].
 License: GPL-2
-Collate:
-    'onlyFunctions.R'
+Collate: 'onlyFunctions.R', 'simulator.R'
