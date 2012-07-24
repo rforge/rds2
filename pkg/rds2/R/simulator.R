@@ -1,10 +1,11 @@
+#### Generate a network ####
 rm(list=ls())
 
-#### Generate a network ####
+
 network.size<- 2000
 network.density<- 0.02
 neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
-# incidence.list<- lapply(neighbour.count, function(x) sample(x=seq(1,network.size), size=x))
+#incidence.list<- lapply(neighbour.count, function(x) sample(x=seq(1,network.size), size=x))
 
 #### Generate a sample under the RDS assumption ####
 generate.sample <- function(theta, Njs, beta, sample.length) {
@@ -45,22 +46,24 @@ generate.sample <- function(theta, Njs, beta, sample.length) {
 	}
 	return(degree.sampled.vec)
 }
-degree.sampled.vec<-generate.sample(theta = theta, Njs = table(unlist(neighbour.count)), beta = 5e-8, sample.length = 3000)
-#save(degree.sampled.vec, file="test.degrees.RData")
-#load(file="test.degrees.RData")
+degree.sampled.vec<-generate.sample(theta = theta, Njs = table(unlist(neighbour.count)), beta = 2e-8, sample.length = 10000)
+#save(degree.sampled.vec, file="~/Dropbox/Yakir/test.degrees.RData")
+#load(file="~/Dropbox/Yakir/test.degrees.RData")
 plot(degree.sampled.vec, type='h')
 
 
 #### Estimation ####
- require(rds2)
- (estimated.simulation<- estimate.rds3(data=degree.sampled.vec, Sij=make.Sij(data=degree.sampled.vec), initial.thetas=c(0.5,1,1.5), const=0.5, theta.minimum=-2, theta.range=4))
- # For old version of the package one has to exctract the best result:
+require(rds2)
+(estimated.simulation<- estimate.rds3(data=degree.sampled.vec, Sij=make.Sij(data=degree.sampled.vec), initial.thetas=c(0.5,1,1.5), const=0.5, theta.minimum=-2, theta.range=4))
+#save(estimated.simulation, file="~/Dropbox/Yakir/test.estimation.RData")
+#load(file="~/Dropbox/Yakir/test.estimation.RData")
+ 
+# Testing the performance:
+# Note: For old version of the package one has to exctract the best result:
 best<- estimated.simulation[[which.max(sapply(estimated.simulation, function(x) x$likelihood.optimum))]]
- 
- plot(Njs, type='h')	
- points(best$Nj, type='h', col='red')
- 
- plot(Njs~best$Nj)
+plot(Njs, type='h')	
+points(best$Nj, type='h', col='red')
+
  
  
  
