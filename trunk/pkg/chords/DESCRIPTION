@@ -1,10 +1,10 @@
 Package: chords
 Type: Package
 Title: Population size and degree distribution estimation in respondent driven sampling.
-Version: 0.6
+Version: 0.65
 Date: 2012-07-19
 Author: Jonathan Rosenblatt
 Maintainer: Jonathan Rosenblatt <john.ros@gmail.com>
 Description: Maximum likelihood estimation of population size and degree distribution following [cite].
 License: GPL-2
-Collate: 'onlyFunctions.R', 'simulator.R'
+Collate: 'onlyFunctions.R'

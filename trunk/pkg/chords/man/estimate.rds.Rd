@@ -37,8 +37,6 @@
   
   \item{Njs}{Numeric vector of fhe frequecies of degree \eqn{j}.}
   
-  \item{theta}{Numeric value of \eqn{\theta}}
-  
   \item{beta}{Numeric value of \eqn{\beta}}
 
 }
@@ -68,8 +66,8 @@
 data(simulation, package='chords')
 temp.data<- unlist(data3[1,7000:7500])
 initial.thetas<- c(1,2)
-rds.result<- estimate.rds(temp.data, Sij = make.Sij(temp.data), initial.thetas = initial.thetas , 
-	arc = FALSE, maxit = 100, const = 0.5, theta.minimum = -0.5, theta.range = 2)
+(rds.result<- estimate.rds(temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,2) , 
+	arc = FALSE, maxit = 100, const = 0.5, theta.minimum = -0.5, theta.range = 2))
 str(rds.result)
 plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 var.theta(temp.data, Sij = make.Sij(temp.data), Njs=rds.result$Nj, theta=rds.result$theta, 

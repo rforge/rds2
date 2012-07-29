@@ -225,8 +225,12 @@ estimate.rds.fix.theta<- function (data, Sij, init, const, arc=FALSE, maxit=1000
 #' data(simulation)
 #' estimate.rds3(data= temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,10), arc = FALSE, maxit = 1000, const = 0.5, theta.minimum = -0.5, theta.range = 2)
 
-estimate.rds<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial.thetas, theta.minimum, theta.range) {
+estimate.rds<- function (data, Sij, init, const=0.5, arc=FALSE, maxit=10000, initial.thetas=c(0.5, 1, 1.5), theta.minimum=-1, theta.range=2) {
+	# Verifying input:
   stopifnot(!all(missing(x=initial.thetas), missing(x=theta.minimum), missing(x=theta.range)))
+  
+  	
+  	# Initializing:
 	# Look for degrees in the data, so their estimates are non vanishing
 	N.j<- rep(0, max(data)) 
 	uniques<- unique(data)
@@ -234,6 +238,7 @@ estimate.rds<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial
 	sorted.uniques<- sort(uniques)
 	param.size<- length(uniques)
 	data.table<-table(data)[-1]
+	final.result<- NA
 	
 	# Compute the size of the snowball along the sample:
 	S<- compute.S(Sij)
@@ -243,7 +248,7 @@ estimate.rds<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial
 	likelihood.wrap<- function(par){
 		final.result<- -Inf # initialize output
 		beta<- exp(par[1])
-		theta<- inv.qnorm.theta(par[2], const = const)		
+		theta<- inv.qnorm.theta(par[[2]], const=const, range=theta.range, minimum=theta.minimum)		
 		## TODO: A) Add estimatino of theta. 
 		N.j<- rep(0, max(data))
 		N.j[sorted.uniques]<- exp(tail(par,-2)) # fill non trivial Nj estimates.
@@ -298,11 +303,102 @@ estimate.rds<- function (data, Sij, init, const, arc=FALSE, maxit=10000, initial
 		}		
 		return(result)
 	} 
-	## TODO: A) Return only numeric objects
-	
+
 	temp.result<- lapply(likelihood.optim, prepare.result)
-	final.result<- temp.result[[which.max(sapply(temp.result, function(x) x$likelihood.optimum))]]
+	
+	if(any(sapply(temp.result, length)==5L)) {
+		clean.temp.result<- temp.result[sapply(temp.result, length)==5L]
+		final.result<- temp.result[[which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum))]]
+	}
+	else{
+		message('Estimation did not converge. Try differet intialization values')
+	}
+	
 	return(final.result)							
 }
 
+data(simulation, package='chords')
+temp.data<- unlist(data3[1,7000:7500])
+(rds.result<- estimate.rds(temp.data, Sij = make.Sij(temp.data), initial.thetas = c(0.5,1,2, 100) , 
+		arc = FALSE, maxit = 100, const = 0.5, theta.minimum = -0.5, theta.range = 2))
 
+
+
+
+
+
+
+
+
+
+generate.sample <- function(theta, Njs, beta, sample.length, double.sampling.warning.thresh=0.05) {
+	# Initializing:
+	js<- as.numeric(names(Njs))
+	N<- sum(Njs)
+	maximal.beta<- 1/ (N * max(Njs) * max(js)^theta )
+	double.sampling.warnings<- FALSE
+	
+	
+	# Input validations:
+	error.messge<- paste("beta value too large. Errors might occur. \nFor the given degree frequencies, consider keeping it under ", signif(maximal.beta), sep="" )
+	if(beta > maximal.beta) message(error.messge) # Note: larger beta favour sampling non 0 degrees.
+	stopifnot(min(js)>0)
+	
+	
+	
+	# Preparing to sample:
+	Uik<- rep(0, length.out=max(js))
+	names(Uik)<- seq(along.with=Uik)
+	snowball<- 1
+	degree.sampled.vec<- rep(NA, sample.length)
+	# Start sampling:
+	for(i in seq(1, sample.length)){	 
+		pi.function<- function(k) beta * k^theta * snowball * (Njs[paste(k)] - Uik[k] )
+		n.pi.function<- function(k) 1-pi.function(k)
+		# Compute the probabilities of sampling degree k=0:
+		no.sample.probability<- prod(unlist(lapply(js, n.pi.function )))
+		sample.someone<- as.logical(rbinom(1, 1, prob = 1 - no.sample.probability ))		
+		if(sample.someone){
+			# Compute the probabilities of sampling degree k>0:
+			probs.function<- function(k){
+				nominator<-  pi.function(k) * prod(unlist(lapply(js[js!=k], n.pi.function)))  
+				# Note: the true probability is not needed due to the normalization in sample(). A constant is used insted.
+				# denominator<-  1 - prod(unlist(lapply(js, n.pi.function)))
+				denominator<-  1 			
+				return(nominator/denominator)		
+			}
+			degree.probabilities<- unlist(lapply(js, probs.function))
+			if( sum(degree.probabilities)+ no.sample.probability <  1- double.sampling.warning.thresh) double.sampling.warnings<- TRUE				
+			degree.sampled<- sample(x=js, prob=degree.probabilities, size=1)      
+			Uik[degree.sampled]<- Uik[degree.sampled]+1
+			snowball<- sum(Uik)
+			degree.sampled.vec[i]<- degree.sampled    
+		}  
+		else{ 
+			degree.sampled.vec[i]<- 0
+		}
+	}
+	
+	# Exiting:
+	if(double.sampling.warnings) message("Double sampling probabilities non-negligeable. Consider lower beta values.")
+	return(degree.sampled.vec)
+}
+
+
+
+
+
+var.theta<- function(data, Sij, Njs, theta, beta){
+	I<- compute.S(Sij)
+	N<- sum(Njs*seq(along.with=Njs))
+	Nj.uniques<- sort(unique(data))
+	total.sampling<- length(data)
+	make.value<- Vectorize(function(k,t){
+				if(!(k %in% rownames(Sij))) return(0)
+				else return(
+							log(k)^2* k^theta* I[t]/N *(Njs[k]/N - Sij[as.character(k),t]/N)
+					)
+			})
+	information<- beta * N * sum(outer(Nj.uniques, seq(1,total.sampling), FUN="make.value"))
+	return( (1/information)/N )
+}
