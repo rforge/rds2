@@ -9,16 +9,17 @@ neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.siz
 
 #### Generate a sample under the RDS assumption ####
 Njs<- table(unlist(neighbour.count[neighbour.count>0]))
-theta<- 1
-beta<- 9e-9 #2e-8
+theta<- 10
+beta<- 1e-19 #2e-8
 
 
 #### Estimation using package ver 0.65 ####
 #install.packages(c("chords_0.65.tar.gz", "~/workspace/rds2/trunk/pkg/chords_0.65.tar.gz"), repos=NULL)
 require(chords)
-degree.sampled.vec<- generate.sample(theta, Njs, beta, 200000)
+degree.sampled.vec<- generate.sample(theta, Njs, beta, 500000)
 plot(degree.sampled.vec, type='h', main='Sample')
-(estimated.simulation<- estimate.rds(data=degree.sampled.vec, Sij=make.Sij(data=degree.sampled.vec), initial.thetas=c(0.5,1,1.5), const=0.5, theta.minimum=-5, theta.range=10))
+
+(estimated.simulation<- estimate.rds(data=degree.sampled.vec, Sij=make.Sij(data=degree.sampled.vec), initial.thetas=c(0.5,1,1.5), const=20, theta.minimum=-15, theta.range=30))
 
 estimated.simulation$theta
 estimated.simulation$beta
@@ -35,6 +36,11 @@ dev.off()
 js<- as.numeric(names(Njs))
 plot(beta*js^theta~ js, type='h', lwd=2)
 points(estimated.simulation$beta * seq(along.with=estimated.simulation$Nj) ^ estimated.simulation$theta, type='h', lwd=1, col='red')
+
+
+
+
+
 
 
 
