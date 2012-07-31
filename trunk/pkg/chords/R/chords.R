@@ -55,7 +55,7 @@ make.Sij<- function(data){
 #' @param minimum 
 #' @return TBC
 #' @author johnros
-inv.qnorm.theta<- function(qnorm.theta, const, range=20, minimum=-10){
+inv.qnorm.theta<- function(qnorm.theta, const, range, minimum){
 	normalized.theta<- pnorm(qnorm.theta / const)
 	normalized.theta2<- (normalized.theta*range) + minimum
 	return(normalized.theta2)
@@ -70,7 +70,7 @@ inv.qnorm.theta<- function(qnorm.theta, const, range=20, minimum=-10){
 #' @param minimum 
 #' @return TBC
 #' @author johnros
-qnorm.theta<- function(theta, const, range=20, minimum=-10){
+qnorm.theta<- function(theta, const, range, minimum){
 	normalized.theta<- (theta-minimum)/range
 	result<- const*qnorm(normalized.theta)
 	return(result)
@@ -283,7 +283,7 @@ estimate.rds<- function (data, Sij, init, const=0.5, arc=FALSE, maxit=10000, ini
 	
 	
 	if(missing(init)) {		
-		init<- lapply(initial.thetas, function(x) c(log.c=log.beta, qnorm.theta=qnorm.theta(x,const), log(data.table)+1 ))
+		init<- lapply(initial.thetas, function(x) c(log.c=log.beta, qnorm.theta=qnorm.theta(x,const, theta.range), log(data.table)+1 ))
 	}
 	
 	likelihood.optim<-lapply(init, function(x) {
@@ -316,11 +316,11 @@ estimate.rds<- function (data, Sij, init, const=0.5, arc=FALSE, maxit=10000, ini
 	
 	return(final.result)							
 }
-
-data(simulation, package='chords')
-temp.data<- unlist(data3[1,7000:7500])
-(rds.result<- estimate.rds(temp.data, Sij = make.Sij(temp.data), initial.thetas = c(0.5,1,2, 100) , 
-		arc = FALSE, maxit = 100, const = 0.5, theta.minimum = -0.5, theta.range = 2))
+## Testing: 
+#data(simulation, package='chords')
+#temp.data<- unlist(data3[1,7000:7500])
+#(rds.result<- estimate.rds(temp.data, Sij = make.Sij(temp.data), initial.thetas = c(0.5,1,2, 100) , 
+#		arc = FALSE, maxit = 100, const = 0.5, theta.minimum = -0.5, theta.range = 2))
 
 
 
