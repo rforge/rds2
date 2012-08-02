@@ -18,12 +18,13 @@
 NA
 
 #' Utility functions for creating snowball matrix.
+#' Assumes input is a table of degrees and degree counts.
 #' @param data The sample
 #' @return The sum of degrees for each rank 
 #' @author Jonathan Rosnblatt
 #' @export
-sum.ranks<- function(data){
-	data.table<- table(data)[-1]
+ranks.sum<- function(data){
+	data.table<- table(data)
 	result<- as.numeric(rownames(data.table))*c(data.table)
 	return(result)
 }
@@ -36,6 +37,7 @@ sum.ranks<- function(data){
 #' @author johnros
 #' @export
 make.Sij<- function(data){
+	stopifnot(length(unique(data))>1L)
 	result<- matrix(0, ncol=length(data), nrow=max(data))
 	for (i in 1:(length(data)-1)){ result[data[i],i+1]<- result[data[i],i+1]+1 }  
 	result<- t(apply(result, 1 , cumsum))
@@ -45,20 +47,23 @@ make.Sij<- function(data){
 	rownames(result)<- .row.names
 	return(result)
 }
+ 
 
 
 
 #' Inverts the map of theta to the real line.  
 #' @param qnorm.theta 
 #' @param const 
-#' @param range 
-#' @param minimum 
+#' @param theta.range 
+#' @param theta.minimum 
 #' @return TBC
 #' @author johnros
-inv.qnorm.theta<- function(qnorm.theta, const, range, minimum){
-	normalized.theta<- pnorm(qnorm.theta / const)
-	normalized.theta2<- (normalized.theta*range) + minimum
-	return(normalized.theta2)
+inv.qnorm.theta<- function(qnorm.theta, ...){
+#	normalized.theta<- pnorm(qnorm.theta / const)
+#	normalized.theta2<- (normalized.theta*theta.range) + theta.minimum
+#	return(normalized.theta2)
+#	exp(qnorm.theta)
+	qnorm.theta
 }
 
 
@@ -66,29 +71,20 @@ inv.qnorm.theta<- function(qnorm.theta, const, range, minimum){
 #' Maps the theta parameter to the real line.
 #' @param theta 
 #' @param const Controls the 
-#' @param range 
-#' @param minimum 
+#' @param theta.range 
+#' @param theta.minimum 
 #' @return TBC
 #' @author johnros
-qnorm.theta<- function(theta, const, range, minimum){
-	normalized.theta<- (theta-minimum)/range
-	result<- const*qnorm(normalized.theta)
-	return(result)
+qnorm.theta<- function(theta, ...){
+#	normalized.theta<- (theta-theta.minimum)/theta.range
+#	result<- const*qnorm(normalized.theta)
+#	return(result)
+#	log(theta)
+	theta
 }
 
-## Test:
-# inv.qnorm.theta(10, 100)
-# inv.qnorm.theta(10, 10)
-# inv.qnorm.theta(20000,10)
-# inv.qnorm.theta(25,200)
-# inv.qnorm.theta(25,200, range=2)
-# inv.qnorm.theta(25,200, range=1)
-# curve(inv.qnorm.theta(x,const=0.6, range=2, minimum=1), -10,10)
-# qnorm.theta(25, range=30, minimum=-1, const=0.1)
-# qnorm.theta(theta=-0.5, const=10, range=2, minimum=-1)
-# inv.qnorm.theta(qnorm.theta(5,100),100)
-# curve(qnorm.theta(x,const=0.6, range=1, minimum=0), -2,2)
-# curve(qnorm.theta(x,const=30, range=1, minimum=-1), -2,2)
+
+
 
 
 
@@ -122,86 +118,16 @@ compute.S<- function(Sij){
 }
 
 
-## TODO: Fix estimation for a single degree!
 
-#' Same as estimate.rds, but for a fixed theta.
-#' @param data 
-#' @param Sij 
-#' @param init 
-#' @param const 
-#' @param arc 
-#' @param maxit 
-#' @param theta 
-#' @return TBC 
-#' @author johnros
-#' @useDynLib rds2
-#' @export 
-#' @examples
-#' data(brazil)
-#' estimate.rds2(data=data.degree, , Sij = data.Sjt, const=50, arc=FALSE, maxit=1000, theta = 1)
-estimate.rds.fix.theta<- function (data, Sij, init, const, arc=FALSE, maxit=10000, theta) {
-	# Look for degrees in the data, so their estimates are nony vanishing
-	N.j<- rep(0, max(data)) 
-	uniques<- unique(data)
-	uniques<- uniques[uniques!=0]
-	s.uniques<- sort(uniques)
-	param.size<- length(uniques)
-	data.table<-table(data)[-1]
-	
-	S<- compute.S(Sij)
-	
-	likelihood.wrap1<- function(par){
-		final.result<- -Inf
-		beta<- exp(par[1])
-		N.j<- rep(0, max(data))
-		N.j[s.uniques]<- exp(tail(par,-1))
-		if(any( N.j[s.uniques] < data.table )) return(final.result)	  
-		
-		if(is.numeric(beta) && is.numeric(theta) && !is.infinite(theta) && !is.infinite(beta) ) {
-			result<- .C("likelihood", 
-					sample=as.integer(data), 
-					Sij=as.integer(as.matrix(Sij)),
-					S=as.integer(S),				  
-					c=as.numeric(beta), 
-					theta=as.numeric(theta), 
-					Nj=as.numeric(N.j), 
-					constant=as.numeric(const),
-					observed_degrees=as.integer(rownames(Sij)),
-					n=as.integer(length(data)), 
-					N=as.integer(length(N.j)),
-					N_observed=as.integer(nrow(Sij)),				  
-					arc=arc,
-					result=as.double(0))		  
-			final.result<- result$result
-		}	  	  
-		return(final.result)
-	}
-	cap<- max(data)
-	cap.arcs<-  sum.ranks(data)
-	max.cap.arcs<- max(cap.arcs)
-	log.beta<- -log(max(sum.ranks(data)*sum(data)) * max(data)) -1
-	
-	if(missing(init)) { 
-		init<- list( 
-				six= c(log.c=log.beta, log(data.table)+1 )
-		
-		)}
-	
-	likelihood.optim<-lapply(init, function(x) {
-				try(optim(par=x, fn=likelihood.wrap1, control=list(fnscale=-1, maxit=maxit))) 
-			}  ) 
-	
-	prepare.result<- function(x){    
-		N.j[s.uniques]<- exp(tail(x$par,-1))
-		result<- list( 
-				c=exp(x$par[[1]]), 
-				theta=theta,
-				Nj=N.j, 
-				x  )
-		return(result)
-	}  
-	return(lapply(likelihood.optim, function(x) try(prepare.result(x))))
+
+
+
+
+
+generate.rds.control<- function(maxit=2000){
+	return(list(maxit=maxit))
 }
+
 
 
 
@@ -225,102 +151,195 @@ estimate.rds.fix.theta<- function (data, Sij, init, const, arc=FALSE, maxit=1000
 #' data(simulation)
 #' estimate.rds3(data= temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,10), arc = FALSE, maxit = 1000, const = 0.5, theta.minimum = -0.5, theta.range = 2)
 
-estimate.rds<- function (data, Sij, init, const=0.5, arc=FALSE, maxit=10000, initial.thetas=c(0.5, 1, 1.5), theta.minimum=-1, theta.range=2) {
-	# Verifying input:
-  stopifnot(!all(missing(x=initial.thetas), missing(x=theta.minimum), missing(x=theta.range)))
-  
-  	
+estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control()) {  	
   	# Initializing:
-	# Look for degrees in the data, so their estimates are non vanishing
-	N.j<- rep(0, max(data)) 
-	uniques<- unique(data)
-	uniques<- uniques[uniques!=0]
-	sorted.uniques<- sort(uniques)
-	param.size<- length(uniques)
-	data.table<-table(data)[-1]
+	max.observed.degree<- max(sampled.degree.vector)
+	N.j<- rep(0, max.observed.degree)
 	final.result<- NA
+	# Look for the degrees in the datawith non trivial estimates:
+	Observed.Njs<-table(sampled.degree.vector)[-1] # table of degree counts withuot zero
+	Observed.js<- as.numeric(names(Observed.Njs))
+	maximal.degree.count<- max(Observed.Njs)
+	the.call<- sys.call()
+	
 	
 	# Compute the size of the snowball along the sample:
 	S<- compute.S(Sij)
 	
 	
-	# Wrapper to the likelihood function. Implements constraints on parameters by taking real valued parameters and remapping them.
+	# Wrap the likelihood function. Implements constraints on parameters by taking real valued parameters and remapping them to the constrained space.
 	likelihood.wrap<- function(par){
-		final.result<- -Inf # initialize output
-		beta<- exp(par[1])
-		theta<- inv.qnorm.theta(par[[2]], const=const, range=theta.range, minimum=theta.minimum)		
-		## TODO: A) Add estimatino of theta. 
-		N.j<- rep(0, max(data))
-		N.j[sorted.uniques]<- exp(tail(par,-2)) # fill non trivial Nj estimates.
-		if(any( N.j[sorted.uniques] < data.table )) return(final.result) # checks that given Njs correspond to estimatable values.		
+		# Initialize:
+		likelihood.result<- -9999999 
+			
+		beta<- exp(par[['canonical.beta']]) # assumes beta is non negative and given in log scale
+		theta<- do.call(inv.qnorm.theta, c(qnorm.theta=par[['canonical.theta']], control))		
+		N.j<- rep(0, max.observed.degree)
+		## Does this sbsetting work when initial values are not specified? 
+		observed.js.indexes<- 	sapply(Observed.js, function(x) grep(paste("logNjs.",x,"$",sep=""), names(par) )   )
+		N.j[Observed.js]<- exp(par[observed.js.indexes]) # fill non trivial Nj estimates.
+		
+		# Checking estimates are within allowed range:
+		if(	isTRUE( any( round(N.j[Observed.js],10) < round(Observed.Njs,10) ) || beta >= 1 / ( sum(N.j) * max(N.j) * max.observed.degree^theta ))){
+			return(likelihood.result)
+		} 
 		
 		if(is.numeric(beta) && is.numeric(theta) && !is.infinite(theta) && !is.infinite(beta) ) {
 			result<- .C("likelihood", 
-					sample=as.integer(data), 
+					sample=as.integer(sampled.degree.vector), 
 					Sij=as.integer(as.matrix(Sij)),
 					S=as.integer(S),				  
 					c=as.numeric(beta), 
 					theta=as.numeric(theta), 
 					Nj=as.numeric(N.j), 
-					constant=as.numeric(const),
+					constant=as.numeric(control$const),
 					observed_degrees=as.integer(rownames(Sij)),
-					n=as.integer(length(data)), 
+					n=as.integer(length(sampled.degree.vector)), 
 					N=as.integer(length(N.j)),
 					N_observed=as.integer(nrow(Sij)),				  
 					arc=arc,
 					result=as.double(0))		  
-			final.result<- result$result
+			likelihood.result<- result$result
 		}	  	  
-		return(final.result)
+		return(likelihood.result)
 	}
 	
-	## Initialize estimation:
 	
-	cap<- max(data)
-	cap.arcs<-  sum.ranks(data)
-	max.cap.arcs<- max(cap.arcs)
-	log.beta<- -log(max(sum.ranks(data)*sum(data)) * max(data)) - 0.01 # beta has to be such that all probabilities in the likelihood are between 0 and 1. In particular, for the last subject sampled.	
-	
-	
-	if(missing(init)) {		
-		init<- lapply(initial.thetas, function(x) c(log.c=log.beta, qnorm.theta=qnorm.theta(x,const, theta.range), log(data.table)+1 ))
+	## TODO: include initialization values for theta. (maybe using intervals between samples).
+	generate.initial.values<- function(initial.values){
+		# compute maximal beta given other parameter values:
+		initial.log.beta.function<- function(theta) {
+			beta<- 1/ (sum(sampled.degree.vector) * maximal.degree.count * max.observed.degree^theta )
+			return(log(beta) - 0.01)
+		}
+		
+		
+		# initiate with only theta given:
+		if(length(initial.values)==1L){
+			stopifnot(is.numeric(initial.values$theta))			
+			wrap.initial.values<- function(theta) {
+				c(
+						canonical.beta=initial.log.beta.function(theta), 
+						canonical.theta=do.call(qnorm.theta, c(theta=theta, control)),
+						logNjs= log(Observed.Njs)+1 
+						)
+			}
+			returned.initial.values<- lapply(initial.values$theta, wrap.initial.values)	
+		}
+		
+		# initiate with all parameter given:
+		else if(length(initial.values)==3L){
+			stopifnot(all(is.numeric(initial.values$theta), is.numeric(initial.values$beta), sapply(initial.values$Njs, is.numeric)))
+			wrap.initial.values<- function(beta, theta,Njs){
+				c(
+						canonical.beta=log(beta) ,
+						canonical.theta=do.call(qnorm.theta, c(theta=theta, control)) ,
+						logNjs=log(Njs)#+1
+				)
+			}
+			returned.initial.values<- mapply(wrap.initial.values, beta= initial.values$beta, theta=initial.values$theta, Njs=initial.values$Njs, SIMPLIFY=FALSE )
+		}		
+		return(returned.initial.values)
 	}
+		
+	## Initialize estimation:	 	
+	initial.values.list<- generate.initial.values(initial.values)				
+		
+	# In case of convergence problems, try different optimization methods. In particular: "Nelder-Mead", "SANN", 
+	optim.wrap<- function(x) try(optim(par=x, fn=likelihood.wrap, method=method , control=list(fnscale=-1, maxit=control$maxit)))
 	
-	likelihood.optim<-lapply(init, function(x) {
-				try(optim(par=x, fn=likelihood.wrap, control=list(fnscale=-1, maxit=maxit))) 
-			}  ) 
+	likelihood.optim<-lapply(initial.values.list,  optim.wrap )
+	
 	
 	prepare.result<- function(x){
 		result<- simpleError("Optim did not converge") 
-		if(is.list(x)){
-			N.j[sorted.uniques]<- exp(tail(x$par,-2))
+		if(length(x)==5L){
+			observed.js.indexes<- sapply(Observed.js, function(y) grep(paste("logNjs.",y,"$",sep=""), names(x$par)))
+			N.j[Observed.js]<- exp(x$par[observed.js.indexes]) # fill non trivial Nj estimates.		
+			
 			result<- list( 
-					beta=exp(x$par[[1]]), 
-					theta=inv.qnorm.theta(x$par[[2]], const=const, range=theta.range, minimum=theta.minimum), 
+					beta=exp(x$par[['canonical.beta']]), 
+					theta=do.call(inv.qnorm.theta, c(qnorm.theta=x$par[['canonical.theta']], control)),
+					initial.values=initial.values,
 					Nj=N.j,
 					iterations=x$counts,
-					likelihood.optimum=x$value)			
+					likelihood.optimum=x$value, 
+					call=the.call)			
 		}		
 		return(result)
 	} 
 
 	temp.result<- lapply(likelihood.optim, prepare.result)
 	
-	if(any(sapply(temp.result, length)==5L)) {
-		clean.temp.result<- temp.result[sapply(temp.result, length)==5L]
-		final.result<- temp.result[[which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum))]]
-	}
-	else{
-		message('Estimation did not converge. Try differet intialization values')
-	}
-	
-	return(final.result)							
+	 length.of.a.proper.output<- 7L
+		if(any(sapply(temp.result, length)==length.of.a.proper.output)) {
+			clean.temp.result<- temp.result[sapply(temp.result, length)==length.of.a.proper.output]
+			final.result<- temp.result[[which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum))]]
+		}
+		else{
+			message('Estimation did not converge. Try differet intialization values or optimization method.')
+		}
+		
+		return(final.result)							
 }
+
 ## Testing: 
 #data(simulation, package='chords')
 #temp.data<- unlist(data3[1,7000:7500])
-#(rds.result<- estimate.rds(temp.data, Sij = make.Sij(temp.data), initial.thetas = c(0.5,1,2, 100) , 
-#		arc = FALSE, maxit = 100, const = 0.5, theta.minimum = -0.5, theta.range = 2))
+#(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), method="BFGS", initial.values=list(theta=c(1,2,10)), 
+#					control=generate.rds.control()))
+#str(rds.result)
+#plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
+#var.theta(temp.data, Sij = make.Sij(temp.data), Njs=rds.result$Nj, theta=rds.result$theta, 
+#		beta=rds.result$c)
+#
+#			 
+#
+#createDegreeCount <- function(network.size, network.density) {
+#	neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
+#	return(table(unlist(neighbour.count[neighbour.count>0])))
+#}
+## Good values1: network.size = 500, network.density = 0.1, theta<- 3, beta<- 1e-10
+#(Njs<- createDegreeCount(network.size = 1e5, network.density = 0.01))
+## Manual creation:
+#Njs<- c(100,100,500,1000); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+## Good values2: theta<- 3, beta<- 5e-10
+#theta<- 1
+#beta<- 1e-10
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e5))
+#plot(degree.sampled.vec, type='h', main='Sample')
+#
+#
+#
+#
+## Testing with initialization from **true** values:
+#str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), method='BFGS',				
+#				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
+#				control = generate.rds.control( maxit = 3000)))
+#str(rds.result)
+#plot(Njs, type='h', lwd=2.5)	
+#points(rds.result$Nj, type='h', col='orange', lwd=2)
+#points(rds.result[[1]]$Nj, type='h', col='orange', lwd=2)
+#points(rds.result[[2]]$Nj, type='h', col='orange', lwd=2)
+#points(rds.result[[3]]$Nj, type='h', col='orange', lwd=2)
+#
+#
+#
+#
+#
+#
+#
+## Testing *without*  true values:
+#str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), arc=FALSE, 
+#				initial.values = list(theta=c(-1, 0.5, 2, 8)), method="BFGS",
+#				control = generate.rds.control(maxit = 1000)))
+#str(rds.result)
+#plot(Njs, type='h', lwd=2.5); points(rds.result[[1]]$Nj, type='h', col='orange', lwd=2)
+#plot(Njs, type='h', lwd=2.5); points(rds.result[[2]]$Nj, type='h', col='orange', lwd=2)
+#plot(Njs, type='h', lwd=2.5); points(rds.result[[3]]$Nj, type='h', col='orange', lwd=2)
+#plot(Njs, type='h', lwd=2.5); points(rds.result[[4]]$Nj, type='h', col='orange', lwd=2)
+
+
 
 
 
@@ -388,11 +407,11 @@ generate.sample <- function(theta, Njs, beta, sample.length, double.sampling.war
 
 
 
-var.theta<- function(data, Sij, Njs, theta, beta){
+var.theta<- function(sampled.degree.vector, Sij=make.Sij(sampled.degree.vector), Njs, theta, beta){
 	I<- compute.S(Sij)
 	N<- sum(Njs*seq(along.with=Njs))
-	Nj.uniques<- sort(unique(data))
-	total.sampling<- length(data)
+	Nj.uniques<- sort(unique(sampled.degree.vector))
+	total.sampling<- length(sampled.degree.vector)
 	make.value<- Vectorize(function(k,t){
 				if(!(k %in% rownames(Sij))) return(0)
 				else return(
@@ -402,3 +421,5 @@ var.theta<- function(data, Sij, Njs, theta, beta){
 	information<- beta * N * sum(outer(Nj.uniques, seq(1,total.sampling), FUN="make.value"))
 	return( (1/information)/N )
 }
+## Example:
+#var.theta(degree.sampled.vec, make.Sij(degree.sampled.vec), rds.result$Nj, rds.result$theta, rds.result$beta )

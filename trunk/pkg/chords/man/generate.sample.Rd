@@ -27,9 +27,6 @@ The duration of sampling in discrete time units.
   \item{double.sampling.warning.thresh}{
 Warns when the parameters are such that the probability of double sampling in a single time step is non negligible.}
 }
-\details{
-%%  ~~ If necessary, more details than the description above ~~
-}
 \value{
 A numeric vector of the degree of the individual sampled at each time step.}
 \references{
@@ -41,11 +38,7 @@ A numeric vector of the degree of the individual sampled at each time step.}
 \author{
   Jonathan D. Rosenblatt \email{john.ros@gmail.com}
 }
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
 \code{\link{estimate.rds}}

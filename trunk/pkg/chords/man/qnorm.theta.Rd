@@ -3,21 +3,17 @@
 \alias{inv.qnorm.theta}
 \title{ Maps \eqn{\theta} to the real line and vise versa.}
 \usage{
-  qnorm.theta(theta, const, range = 20, minimum = -10)
+  qnorm.theta(theta, ... )
     
-   inv.qnorm.theta(qnorm.theta, const, range = 20,
-    minimum = -10)
+   inv.qnorm.theta(qnorm.theta, ...)
 }
 \arguments{
   \item{theta}{\eqn{\theta } in its original scale}
   
   \item{qnorm.theta}{\eqn{\theta } rescaled by \code{qnorm.theta}}
+  
+  \item{...}{ For future usage.}
 
-  \item{const}{Control the concentration around zero of the mapping of the theta parameter from the constrained domain to the real line. Typically passed by \code{estimate.rds}}
-
- \item{range}{ Defines the range of \eqn{\theta} from \code{minimum} to \code{minimum+range} }
- 
- \item{minimum}{ The minimal value for \eqn{\theta} in the original scale.} 
   
 }
 \value{
@@ -26,6 +22,10 @@
 \description{
   Maps \eqn{\theta} to the real line and vise versa.
 }
+\note{
+These functions were created in the view that theta values might be constrained is some way. Eventually, this was not done so at present they are both identity functions.
+}
+
 \author{
   Jonathan D. Rosenblatt \email{john.ros@gmail.com}
 }
