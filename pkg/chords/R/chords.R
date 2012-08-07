@@ -87,7 +87,7 @@ qnorm.theta<- function(theta, ...){
 
 
 
-
+## TODO: B) Function no longer needed as only the best result is returned by estimate.rds
 
 #' Compares the output of the optimizaton for different initialization values.
 #' @param estimation An rds2 estimation object
