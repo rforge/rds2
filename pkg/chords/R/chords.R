@@ -205,7 +205,10 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 	}
 	
 	
-	## TODO: include initialization values for theta. (maybe using intervals between samples).
+	
+	
+	
+	## TODO: B) Automate initialization values for theta. (maybe using moments of intervals between samples).
 	generate.initial.values<- function(initial.values){
 		# compute maximal beta given other parameter values:
 		initial.log.beta.function<- function(theta) {
@@ -214,6 +217,8 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 		}
 		
 		
+		
+			
 		# initiate with only theta given:
 		if(length(initial.values)==1L){
 			stopifnot(is.numeric(initial.values$theta))			
@@ -227,6 +232,8 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 			returned.initial.values<- lapply(initial.values$theta, wrap.initial.values)	
 		}
 		
+		
+		
 		# initiate with all parameter given:
 		else if(length(initial.values)==3L){
 			stopifnot(all(is.numeric(initial.values$theta), is.numeric(initial.values$beta), sapply(initial.values$Njs, is.numeric)))
@@ -238,10 +245,48 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 				)
 			}
 			returned.initial.values<- mapply(wrap.initial.values, beta= initial.values$beta, theta=initial.values$theta, Njs=initial.values$Njs, SIMPLIFY=FALSE )
-		}		
+		}
+		
+		
+		## TODO: A) allow given beta values for initialization
+		
+		# initiate with theta and beta given:
+		else if(length(initial.values)==2L){
+			stopifnot(all(is.numeric(initial.values$theta), is.numeric(initial.values$beta)))
+			wrap.initial.values<- function(beta, theta){				
+				output<- c(
+						canonical.beta=log(beta) ,
+						canonical.theta=qnorm.theta(theta) ,
+						logNjs=log(Njs)#+1
+				)				
+				log.beta.limit<- initial.log.beta.function(theta)
+				
+				if(beta > exp(log.beta.limit)){
+					message(paste('Initial beta too large. Forcing beta=',signif(exp(log.beta.limit),4), " instead of beta=",signif(beta,4), sep=""))
+					output[['canonical.beta']]<- log.beta.limit
+				}				
+				return(output)
+			}
+			
+			# take a the list of beta and thetas and return a list with initialization values
+			returned.initial.values<-list()
+			for (theta in initial.values$theta){
+				for (beta in initial.values$beta){
+					returned.initial.values<- c(returned.initial.values, list(wrap.initial.values(beta, theta)))
+				}
+			}				
+		}	
+		
+		
 		return(returned.initial.values)
 	}
 		
+	
+	
+	
+	
+	
+	
 	## Initialize estimation:	 	
 	initial.values.list<- generate.initial.values(initial.values)				
 		
@@ -283,9 +328,10 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 		return(final.result)							
 }
 
-## Testing: 
+##### Testing: 
 #data(simulation, package='chords')
 #temp.data<- unlist(data3[1,7000:7500])
+## Initialize only with thetas:
 #(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), method="BFGS", initial.values=list(theta=c(1,2,10)), 
 #					control=generate.rds.control()))
 #str(rds.result)
@@ -300,16 +346,14 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 #	return(table(unlist(neighbour.count[neighbour.count>0])))
 #}
 ## Good values1: network.size = 500, network.density = 0.1, theta<- 3, beta<- 1e-10
-#(Njs<- createDegreeCount(network.size = 1e5, network.density = 0.01))
+##(Njs<- createDegreeCount(network.size = 1e5, network.density = 0.01))
 ## Manual creation:
-#Njs<- c(100,100,500,1000); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+#Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
 ## Good values2: theta<- 3, beta<- 5e-10
 #theta<- 1
-#beta<- 1e-10
-#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e5))
+#beta<- 5e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
 #plot(degree.sampled.vec, type='h', main='Sample')
-#
-#
 #
 #
 ## Testing with initialization from **true** values:
@@ -324,12 +368,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 #points(rds.result[[3]]$Nj, type='h', col='orange', lwd=2)
 #
 #
-#
-#
-#
-#
-#
-## Testing *without*  true values:
+## Initializing with theta only. (true values unknown):
 #str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), arc=FALSE, 
 #				initial.values = list(theta=c(-1, 0.5, 2, 8)), method="BFGS",
 #				control = generate.rds.control(maxit = 1000)))
@@ -338,9 +377,13 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 #plot(Njs, type='h', lwd=2.5); points(rds.result[[2]]$Nj, type='h', col='orange', lwd=2)
 #plot(Njs, type='h', lwd=2.5); points(rds.result[[3]]$Nj, type='h', col='orange', lwd=2)
 #plot(Njs, type='h', lwd=2.5); points(rds.result[[4]]$Nj, type='h', col='orange', lwd=2)
-
-
-
+#
+#
+## Initializing with thetas and betas (unknown values):
+#str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), arc=FALSE, 
+#				initial.values = list(theta=c(-1, 0.5, 2, 8), beta=c(1e-13, 1e-1, 1e-5)), 
+#				method="BFGS", control = generate.rds.control(maxit = 1000)))
+#str(rds.result)
 
 
 
