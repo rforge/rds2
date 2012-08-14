@@ -226,7 +226,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 				c(
 						canonical.beta=initial.log.beta.function(theta), 
 						canonical.theta=do.call(qnorm.theta, c(theta=theta, control)),
-						logNjs= log(Observed.Njs)+1 
+						logNjs= log(Observed.Njs)+0.1 
 						)
 			}
 			returned.initial.values<- lapply(initial.values$theta, wrap.initial.values)	
@@ -237,7 +237,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 		# initiate with all parameter given:
 		else if(length(initial.values)==3L){
 			stopifnot(all(is.numeric(initial.values$theta), is.numeric(initial.values$beta), sapply(initial.values$Njs, is.numeric)))
-			wrap.initial.values<- function(beta, theta,Njs){
+			wrap.initial.values<- function(beta, theta, Njs){
 				c(
 						canonical.beta=log(beta) ,
 						canonical.theta=do.call(qnorm.theta, c(theta=theta, control)) ,
@@ -257,7 +257,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 				output<- c(
 						canonical.beta=log(beta) ,
 						canonical.theta=qnorm.theta(theta) ,
-						logNjs=log(Njs)#+1
+						logNjs=log(Observed.Njs)+0.1
 				)				
 				log.beta.limit<- initial.log.beta.function(theta)
 				

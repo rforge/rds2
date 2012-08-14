@@ -1,6 +1,6 @@
 Package: chords
 Type: Package
-Title: Population size and degree distribution estimation in respondent driven sampling.
+Title: Estimation in respondent driven samples.
 Version: 0.65
 Date: 2012-07-19
 Author: Jonathan Rosenblatt
