@@ -2,6 +2,8 @@
 \alias{estimate.rds}
 \alias{generate.rds.control}
 \alias{var.theta}
+\alias{estimate.rds.free.betas}
+
 \title{ ML estimation of population size and degree distribution in respondent driven samples }
 \usage{
   	estimate.rds(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control())
@@ -9,6 +11,8 @@
     var.theta(sampled.degree.vector, Sij, Njs, theta, beta)
     
     generate.rds.control(maxit=2000)
+    
+    estimate.rds.free.betas(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control())
 
 }
 \arguments{
@@ -37,7 +41,8 @@
     ML estimation of population size and degree distribution in respondent driven samples. 
 }
 \value{
-\code{estimate.rds} and \code{estimate.rds.fix.theta} return a list with the estimates for each starting value of \eqn{\theta}. Each components includes:
+\code{estimate.rds} returns a list with the estimates for each starting values. 
+Each components includes:
 	\item{beta}{See in \emph{details}}
 	\item{theta}{See in \emph{details}}
 	\item{initial.values}{Values used to initiate the optimization.}
@@ -48,10 +53,10 @@
   
 \code{var.theta} returns an estimate of the asymptotic variance of \eqn{\theta}.
 
+\code{estimate.rds.free.betas}  will not return \eqn{\theta} and \eqn{\beta} but rather a vector of \eqn{\beta_j} for all observed degrees.  
+
 \code{generate.rds.control} returns a list of control values needed by \code{estimate.rds}. At present this includes only the number of \code{\link{optim}} iterations.
-
 }
-
 
 
 \details{
@@ -61,8 +66,11 @@
   \deqn{\beta I[j] (N[i]-S[i,j]) i^\theta }
   where   \eqn{\beta} is the base rate of sampling, \eqn{\theta} is the "coefficient of discoverability", \eqn{I[j]} it the number of individuals sampled up to time \eqn{j}, 
    \eqn{N[i]} is the number of individuals with degree \eqn{i} in the population, and \eqn{S[i,j]} is the number of individuals with degree \eqn{i} sampled up to time \eqn{j}.
-   The function \code{estimate.rds} has to be given some initialization values. By default, it is given a grid of \eqn{\theta} values, but it can also be given a list including other parameter values (as in the example).  
+   The function \code{estimate.rds} has to be given some initialization values. By default, it is given a grid of \eqn{\theta} values, but it can also be given a list including other parameter values (as in the example).
+   \code{estimate.rds.free.betas} works like \code{estimate.rds} but does not assume \eqn{\beta_j=\beta * j^ \theta }, so tries to estimate \eqn{\beta_j} directly.  
    }
+   
+   
 \examples{
 data(simulation, package='chords')
 temp.data<- unlist(data3[1,7000:7500])
@@ -83,6 +91,7 @@ str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.
 				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs))))
 	}
 
+ 
 
 }
 \author{

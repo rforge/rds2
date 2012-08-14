@@ -10,10 +10,9 @@ extern "C"{
 	void likelihood(  int *sample,
 					  int *Sij,
 					  int *S,
-					  double *c,
+					  double *beta,
 					  double *theta,
 					  double *Nj,
-					  double *constant,
 					  int *observed_degrees,
 					  int *n,
 					  int *N,
@@ -31,8 +30,8 @@ extern "C"{
 			for(int j=0; j < *N_observed; ++j) {
 				temp_degree = observed_degrees[j];
 				*result += (sample[i] == temp_degree ) ?
-					(log(*c) + log((double)S[i]) + log(Nj[temp_degree-1] - Sij[j + i*(*N_observed) ]) + *theta * log((double)temp_degree)) :
-					(log(1.0 - *c * S[i] * (Nj[temp_degree-1]-Sij[j + i*( *N_observed)] ) * pow(double(temp_degree), *theta)));
+					(log(*beta) + log((double)S[i]) + log(Nj[temp_degree-1] - Sij[j + i*(*N_observed) ]) + *theta * log((double)temp_degree)) :
+					(log(1.0 - *beta * S[i] * (Nj[temp_degree-1]-Sij[j + i*( *N_observed)] ) * pow(double(temp_degree), *theta)));
 			}
 			if(sample[i]>0 && first) 
 				first = false;

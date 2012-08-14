@@ -189,10 +189,9 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 					sample=as.integer(sampled.degree.vector), 
 					Sij=as.integer(as.matrix(Sij)),
 					S=as.integer(S),				  
-					c=as.numeric(beta), 
+					beta=as.numeric(beta), 
 					theta=as.numeric(theta), 
 					Nj=as.numeric(N.j), 
-					constant=as.numeric(control$const),
 					observed_degrees=as.integer(rownames(Sij)),
 					n=as.integer(length(sampled.degree.vector)), 
 					N=as.integer(length(N.j)),
@@ -247,8 +246,6 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 			returned.initial.values<- mapply(wrap.initial.values, beta= initial.values$beta, theta=initial.values$theta, Njs=initial.values$Njs, SIMPLIFY=FALSE )
 		}
 		
-		
-		## TODO: A) allow given beta values for initialization
 		
 		# initiate with theta and beta given:
 		else if(length(initial.values)==2L){
