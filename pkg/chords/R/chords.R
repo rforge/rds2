@@ -148,10 +148,13 @@ generate.rds.control<- function(maxit=2000){
 #' @useDynLib rds2
 #' @export
 #' @examples
-#' data(simulation)
-#' estimate.rds3(data= temp.data, Sij = make.Sij(temp.data), initial.thetas = c(1,10), arc = FALSE, maxit = 1000, const = 0.5, theta.minimum = -0.5, theta.range = 2)
+#'data(simulation, package='chords')
+#'temp.data<- unlist(data3[1,7000:7500])
+#'(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2)), control=generate.rds.control(maxit=20)))
+#'plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
+#'var.theta(temp.data, Njs=rds.result$Nj, theta=rds.result$theta, beta=rds.result$beta)
 
-estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control()) {  	
+estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE) {  	
   	# Initializing:
 	max.observed.degree<- max(sampled.degree.vector)
 	N.j<- rep(0, max.observed.degree)
@@ -198,9 +201,11 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 					N_observed=as.integer(nrow(Sij)),				  
 					arc=arc,
 					result=as.double(0))		  
-			likelihood.result<- result$result
-		}	  	  
+			
+		}	
+		if(!is.infinite(result$result)) likelihood.result<-result$result
 		return(likelihood.result)
+		
 	}
 	
 	
@@ -313,10 +318,14 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 
 	temp.result<- lapply(likelihood.optim, prepare.result)
 	
-	 length.of.a.proper.output<- 7L
-		if(any(sapply(temp.result, length)==length.of.a.proper.output)) {
-			clean.temp.result<- temp.result[sapply(temp.result, length)==length.of.a.proper.output]
-			final.result<- temp.result[[which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum))]]
+	 if(  any(sapply(temp.result, length) > 2 )   ){
+			clean.temp.result<- temp.result[sapply(temp.result, length) > 2]
+			if(!all.solutions){ 
+				final.result<- temp.result[[  which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum)) ]]
+			}
+			else{
+				final.result<- clean.temp.result
+			} 
 		}
 		else{
 			message('Estimation did not converge. Try differet intialization values or optimization method.')

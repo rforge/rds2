@@ -6,7 +6,7 @@
 
 \title{ ML estimation of population size and degree distribution in respondent driven samples }
 \usage{
-  	estimate.rds(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control())
+  	estimate.rds(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
      
     var.theta(sampled.degree.vector, Sij, Njs, theta, beta)
     
@@ -34,7 +34,9 @@
   
   \item{beta}{ Numeric value of \eqn{\beta} }
   
-  \item{maxit}{Used by \code{generate.rds.control} to control the behavious of \code{\link{optim}}.} 
+  \item{maxit}{Used by \code{generate.rds.control} to control the behavious of \code{\link{optim}}.}
+  
+  \item{all.solutions}{Should all local maxima be returned or just one.} 
 
 }
 \description{
@@ -74,8 +76,7 @@ Each components includes:
 \examples{
 data(simulation, package='chords')
 temp.data<- unlist(data3[1,7000:7500])
-(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), method="BFGS", initial.values=list(theta=c(1,2)), control=generate.rds.control(maxit=100)))
-str(rds.result)
+(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2)), control=generate.rds.control(maxit=20)))
 plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 var.theta(temp.data, Njs=rds.result$Nj, theta=rds.result$theta, beta=rds.result$beta)
 

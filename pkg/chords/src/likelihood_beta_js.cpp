@@ -28,8 +28,8 @@ extern "C"{
 			for(int j=0; j < *N_observed; ++j) { // go over observed degrees
 				temp_degree = observed_degrees[j];
 								*result += (sample[i] == temp_degree ) ?
-									(log(beta_js[j]) + log((double)S[i]) + log(Nj[temp_degree-1] - Sij[j + i*(*N_observed) ]) ) :
-									(log(1.0 - beta_js[j] * S[i] * ( Nj[temp_degree-1] - Sij[j + i*( *N_observed)] )));
+									(log(beta_js[temp_degree-1]) + log((double)S[i]) + log(Nj[temp_degree-1] - Sij[j + i*(*N_observed) ]) ) :
+									(log(1.0 - beta_js[temp_degree-1] * S[i] * ( Nj[temp_degree-1] - Sij[j + i*( *N_observed)] )));
 			}
 			if(sample[i]>0 && first) 
 				first = false;
