@@ -4,18 +4,7 @@
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-## TODO: B) Pad exported beta_js with NaNs.
+## TODO: B) Pad exported beta_js with NaNs or give name attribute to output.
 
 estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control()) {  	
 	# Initializing:
@@ -105,10 +94,9 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 			observed.js.indexes<- sapply(Observed.js, function(y) grep(paste("logNjs.",y,"$",sep=""), names(x$par)))
 			N.j[Observed.js]<- exp(x$par[observed.js.indexes]) # fill non trivial Nj estimates.		
 			
-			## TODO: B) remove "canonical.beta" names
 			result<- list( 
-					beta_js= c(exp(x$par[-observed.js.indexes])), 
-					initial.values=initial.values,
+					beta_js= c(exp(x$par[-observed.js.indexes])),
+					observed_js=Observed.js, 
 					Nj=N.j,
 					iterations=x$counts,
 					likelihood.optimum=x$value, 
@@ -119,9 +107,10 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 	
 	temp.result<- lapply(likelihood.optim, prepare.result)
 	
-	length.of.a.proper.output<- 6L
-	if(any(sapply(temp.result, length)==length.of.a.proper.output)) {
-		clean.temp.result<- temp.result[sapply(temp.result, length)==length.of.a.proper.output]
+	
+	output.ok<- any(sapply(temp.result, length)>1)	
+	if(output.ok) {
+		clean.temp.result<- temp.result[sapply(temp.result, length) > 2 ]
 		final.result<- temp.result[[which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum))]]
 	}
 	else{
@@ -132,11 +121,12 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 }
 
 ##### Testing: 
+#require(chords)
 #data(simulation, package='chords')
 #temp.data<- unlist(data3[1,7000:7500])
 ## Initialize only with thetas:
 #(rds.result<- estimate.rds.free.betas(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), method="BFGS", initial.values=list(), 
-#					control=generate.rds.control()))
+#					control=generate.rds.control(maxit = 200)))
 #str(rds.result)
 #plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')
 #x11()
@@ -198,5 +188,5 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 #				initial.values = list(theta=c(-1, 0.5, 2, 8), beta=c(1e-13, 1e-1, 1e-5)), 
 #				method="BFGS", control = generate.rds.control(maxit = 1000)))
 #str(rds.result)
-#
-#
+
+
