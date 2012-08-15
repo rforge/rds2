@@ -15,7 +15,7 @@
 
 
 
-
+## TODO: B) Pad exported beta_js with NaNs.
 
 estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control()) {  	
 	# Initializing:
