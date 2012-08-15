@@ -112,7 +112,7 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 	
 	likelihood.optim<-lapply(initial.values.list,  optim.wrap )
 	
-	
+	browser()
 	prepare.result<- function(x){
 		result<- simpleError("Optim did not converge") 
 		if(length(x)==5L){
@@ -249,6 +249,21 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 
 
 
+prepare.initialization<- function(free.beta.fit){
+	Njs<- free.beta.fit$Nj
+	js<- seq(along.with=Njs)
+	beta_js<- free.beta.fit$beta * js^free.beta.fit$theta
+	
+	output<- list(beta_js=beta_js, Njs=free.beta.fit$Nj)
+	return(output)
+}
+### Testing:
+#require(chords)
+#data(simulation, package='chords')
+#temp.data<- unlist(data3[1,7000:7500])
+#(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2,10)), 
+#					control=generate.rds.control(maxit = 10), all.solutions = TRUE))
+#prepare.initialization(rds.result[[1]])
 
 
 
@@ -256,12 +271,13 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 
 
 
-
+## TODO: A) Finish "warp" initialization.
 estimate.rds.two.stage<- function(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE){
 	first.estimates<- estimate.rds(sampled.degree.vector, Sij, method, initial.values, arc, control, all.solutions = TRUE)
 	second.stage<- list()
 	for(i in seq(along=first.estimates)){
-		second.stage[[i]]<- estimate.rds.free.betas(sampled.degree.vector, Sij, method, initial.values, arc, control)
+		second.initialization<- prepare.initialization(first.estimates[[i]])
+		second.stage[[i]]<- estimate.rds.free.betas(sampled.degree.vector, Sij, method, second.initialization, arc, control)
 	}
 	
 	if(  any(sapply(second.stage, length) > 2 )   ){
@@ -280,34 +296,34 @@ estimate.rds.two.stage<- function(sampled.degree.vector, Sij, method="BFGS", ini
 	return(final.result)
 }
 ## Testing:
-## Good values1: network.size = 500, network.density = 0.1, theta<- 3, beta<- 1e-10
-#createDegreeCount <- function(network.size, network.density) {
-#	neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
-#	return(table(unlist(neighbour.count[neighbour.count>0])))
-#}
-#{
-#	Njs<- createDegreeCount(network.size = 500, network.density = 0.1)
-#	theta<- 3
-#	beta<- 1e-10
-#	tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=10000))
-#	plot(degree.sampled.vec, type='h', main='Sample')
-#	
-#	str(rds.result<- estimate.rds.two.stage(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 
-#					method='BFGS',				
-#					initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
-#					control = generate.rds.control( maxit = 100), all.solutions = FALSE))
-#}
-#{
-#	plot(rds.result$beta_js~rds.result$observed_js)
-#	lines(lowess(rds.result$beta_js~rds.result$observed_js), col='red')
-#	lines( beta*rds.result$observed_js^theta  ~ rds.result$observed_js, lty=2)
-#	(lm.1<- lm(log(rds.result$beta_js)~log(rds.result$observed_js)-1))
-#	lines(exp(predict(lm.1))~rds.result$observed_js , col='blue')
-#	require(MASS)
-#	(lm.2<- rlm(log(rds.result$beta_js)~log(rds.result$observed_js)-1, method = "MM"))
-#	lines(exp(predict(lm.2))~rds.result$observed_js , col='green')
-#}
-#plot(col='lightgrey', Njs, type='h')
+# Good values1: network.size = 500, network.density = 0.1, theta<- 3, beta<- 1e-10
+createDegreeCount <- function(network.size, network.density) {
+	neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
+	return(table(unlist(neighbour.count[neighbour.count>0])))
+}
+{
+	Njs<- createDegreeCount(network.size = 500, network.density = 0.1)
+	theta<- 3
+	beta<- 1e-10
+	tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1000))
+	plot(degree.sampled.vec, type='h', main='Sample')
+	
+	str(rds.result<- estimate.rds.two.stage(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 
+					method='BFGS',				
+					initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
+					control = generate.rds.control( maxit = 10), all.solutions = FALSE))
+}
+{
+	plot(rds.result$beta_js~rds.result$observed_js)
+	lines(lowess(rds.result$beta_js~rds.result$observed_js), col='red')
+	lines( beta*rds.result$observed_js^theta  ~ rds.result$observed_js, lty=2)
+	(lm.1<- lm(log(rds.result$beta_js)~log(rds.result$observed_js)-1))
+	lines(exp(predict(lm.1))~rds.result$observed_js , col='blue')
+	require(MASS)
+	(lm.2<- rlm(log(rds.result$beta_js)~log(rds.result$observed_js)-1, method = "MM"))
+	lines(exp(predict(lm.2))~rds.result$observed_js , col='green')
+}
+plot(col='lightgrey', Njs, type='h')
 
 
 ## Manual creation:
