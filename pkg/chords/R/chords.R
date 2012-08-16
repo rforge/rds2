@@ -319,7 +319,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 	temp.result<- lapply(likelihood.optim, prepare.result)
 	
 	 if(  any(sapply(temp.result, length) > 2 )   ){
-			clean.temp.result<- temp.result[sapply(temp.result, length) > 2]
+			clean.temp.result<- as.list(temp.result[sapply(temp.result, length) > 2])
 			if(!all.solutions){ 
 				final.result<- temp.result[[  which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum)) ]]
 			}

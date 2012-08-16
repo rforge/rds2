@@ -2,9 +2,9 @@
 \alias{estimate.rds}
 \alias{generate.rds.control}
 \alias{var.theta}
-\alias{estimate.rds.free.betas}
+\alias{estimate.rds.two.stage}
 
-\title{ ML estimation of population size and degree distribution in respondent driven samples }
+\title{ Degree distribution estimation in respondent driven samples }
 \usage{
   	estimate.rds(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
      
@@ -12,9 +12,11 @@
     
     generate.rds.control(maxit=2000)
     
-    estimate.rds.free.betas(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control())
+    estimate.rds.two.stage(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
 
 }
+
+
 \arguments{
   \item{sampled.degree.vector}{An integer vector of the degree of each individual sampled (including zeroes).}
 
@@ -39,9 +41,13 @@
   \item{all.solutions}{Should all local maxima be returned or just one.} 
 
 }
+
+
 \description{
     ML estimation of population size and degree distribution in respondent driven samples. 
 }
+
+
 \value{
 \code{estimate.rds} returns a list with the estimates for each starting values. 
 Each components includes:
@@ -55,7 +61,7 @@ Each components includes:
   
 \code{var.theta} returns an estimate of the asymptotic variance of \eqn{\theta}.
 
-\code{estimate.rds.free.betas}  will not return \eqn{\theta} and \eqn{\beta} but rather a vector of \eqn{\beta_j} for all observed degrees.  
+\code{estimate.rds.two.stage}  will not return \eqn{\theta} and \eqn{\beta} but rather a vector of \eqn{\beta_j} for all observed degrees.  
 
 \code{generate.rds.control} returns a list of control values needed by \code{estimate.rds}. At present this includes only the number of \code{\link{optim}} iterations.
 }
@@ -69,17 +75,28 @@ Each components includes:
   where   \eqn{\beta} is the base rate of sampling, \eqn{\theta} is the "coefficient of discoverability", \eqn{I[j]} it the number of individuals sampled up to time \eqn{j}, 
    \eqn{N[i]} is the number of individuals with degree \eqn{i} in the population, and \eqn{S[i,j]} is the number of individuals with degree \eqn{i} sampled up to time \eqn{j}.
    The function \code{estimate.rds} has to be given some initialization values. By default, it is given a grid of \eqn{\theta} values, but it can also be given a list including other parameter values (as in the example).
-   \code{estimate.rds.free.betas} works like \code{estimate.rds} but does not assume \eqn{\beta_j=\beta * j^ \theta }, so tries to estimate \eqn{\beta_j} directly.  
+   \code{estimate.rds.two.stage} works like \code{estimate.rds} but does not assume \eqn{\beta_j=\beta * j^ \theta }, so tries to estimate \eqn{\beta_j} directly. 
+   It does so in two stages: in the first it calls \code{estimate.rds}, and once the optimal values have been found, it relaxes the \eqn{\beta_j=\beta * j^ \theta } assumptions and optimizes for \eqn{\beta_j)}
    }
    
    
 \examples{
+#### Estimating assuming beta_j=beta * j^theta:
 data(simulation, package='chords')
 temp.data<- unlist(data3[1,7000:7500])
-(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2)), control=generate.rds.control(maxit=20)))
+(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2)), 
+control=generate.rds.control(maxit=20)))
 plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 var.theta(temp.data, Njs=rds.result$Nj, theta=rds.result$theta, beta=rds.result$beta)
 
+
+
+#### Example of the two-stage estimation of beta_j:
+estimation3<- estimate.rds.two.stage(sampled.degree.vector=temp.data, Sij = make.Sij(temp.data), 
+											initial.values=list(theta=c(0.5,1,1.5)),
+											control=generate.rds.control(maxit=5))
+plot(estimation3$beta_js~estimation3$observed_js)
+lines(lowess(estimation3$beta_js~estimation3$observed_js), col='red')
 
 
 \dontrun{
@@ -89,15 +106,17 @@ theta<- 1
 beta<- 1e-10
 tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e5))
 str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 				
-				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs))))
+				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs))))	
+		
 	}
-
- 
-
 }
+
+
 \author{
   Jonathan D. Rosenblatt \email{john.ros@gmail.com}
 }
+
+
 \references{
 	Respondent Driven Sampling as an Epidemic Process
 	Berchenko Y., Rosenblatt J.D., White R.G.,Frost S.D.W. (2012) 

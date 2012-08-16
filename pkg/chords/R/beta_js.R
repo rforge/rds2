@@ -112,10 +112,9 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 	
 	likelihood.optim<-lapply(initial.values.list,  optim.wrap )
 	
-	browser()
 	prepare.result<- function(x){
 		result<- simpleError("Optim did not converge") 
-		if(length(x)==5L){
+		if(length(x) > 2){
 			observed.js.indexes<- sapply(Observed.js, function(y) grep(paste("logNjs.",y,"$",sep=""), names(x$par)))
 			N.j[Observed.js]<- exp(x$par[observed.js.indexes]) # fill non trivial Nj estimates.		
 			
@@ -133,7 +132,7 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 	temp.result<- lapply(likelihood.optim, prepare.result)
 	
 	
-	output.ok<- any(sapply(temp.result, length)>1)	
+	output.ok<- any(sapply(temp.result, length) > 2)	
 	if(output.ok) {
 		clean.temp.result<- temp.result[sapply(temp.result, length) > 2 ]
 		final.result<- temp.result[[which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum))]]
@@ -185,18 +184,18 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 #
 #
 #
-
+#
 ## Testing with initialization from **true** values:
 #true.js<- sort(unique(as.numeric(names(Njs))))
 #(true.beta_js<- beta*true.js^theta)
 #names(true.beta_js)<- true.js
+#
 #str(rds.result<- estimate.rds.free.betas(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 
 #				method='BFGS',				
 #				initial.values = list(
 #						beta_js=true.beta_js, 
 #						Njs=Njs),  
 #				control = generate.rds.control( maxit = 20)))
-#str(rds.result)
 #{
 #	plot(Njs, type='h', lwd=2.5)	
 #	points(rds.result$Nj, type='h', col='orange', lwd=2)
@@ -211,6 +210,10 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 #	lm.2<- rlm(log(rds.result$beta_js)~log(rds.result$observed_js)-1, method = "MM")
 #	lines(exp(predict(lm.2))~rds.result$observed_js , col='green')
 #}
+#
+#
+#
+#
 #
 #
 #
@@ -239,22 +242,18 @@ estimate.rds.free.betas<- function (sampled.degree.vector, Sij, method="BFGS", i
 
 
 
-
-
-
-
-
-
-
-
-
-
 prepare.initialization<- function(free.beta.fit){
-	Njs<- free.beta.fit$Nj
-	js<- seq(along.with=Njs)
-	beta_js<- free.beta.fit$beta * js^free.beta.fit$theta
+	zero.padded.Njs<- free.beta.fit$Nj
+	zero.padded.js<- seq(along.with=zero.padded.Njs)
+	zero.padded.beta_js<- free.beta.fit$beta * zero.padded.js^free.beta.fit$theta
 	
-	output<- list(beta_js=beta_js, Njs=free.beta.fit$Nj)
+	non.zero.indicators<- zero.padded.Njs>0
+	Njs<- zero.padded.Njs[non.zero.indicators]
+	names(Njs)<- zero.padded.js[non.zero.indicators]
+	beta_js<- zero.padded.beta_js[non.zero.indicators]
+	names(beta_js)<- zero.padded.js[non.zero.indicators]
+	
+	output<- list(beta_js=beta_js, Njs=Njs)
 	return(output)
 }
 ### Testing:
@@ -271,7 +270,6 @@ prepare.initialization<- function(free.beta.fit){
 
 
 
-## TODO: A) Finish "warp" initialization.
 estimate.rds.two.stage<- function(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE){
 	first.estimates<- estimate.rds(sampled.degree.vector, Sij, method, initial.values, arc, control, all.solutions = TRUE)
 	second.stage<- list()
@@ -297,35 +295,35 @@ estimate.rds.two.stage<- function(sampled.degree.vector, Sij, method="BFGS", ini
 }
 ## Testing:
 # Good values1: network.size = 500, network.density = 0.1, theta<- 3, beta<- 1e-10
-createDegreeCount <- function(network.size, network.density) {
-	neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
-	return(table(unlist(neighbour.count[neighbour.count>0])))
-}
-{
-	Njs<- createDegreeCount(network.size = 500, network.density = 0.1)
-	theta<- 3
-	beta<- 1e-10
-	tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1000))
-	plot(degree.sampled.vec, type='h', main='Sample')
-	
-	str(rds.result<- estimate.rds.two.stage(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 
-					method='BFGS',				
-					initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
-					control = generate.rds.control( maxit = 10), all.solutions = FALSE))
-}
-{
-	plot(rds.result$beta_js~rds.result$observed_js)
-	lines(lowess(rds.result$beta_js~rds.result$observed_js), col='red')
-	lines( beta*rds.result$observed_js^theta  ~ rds.result$observed_js, lty=2)
-	(lm.1<- lm(log(rds.result$beta_js)~log(rds.result$observed_js)-1))
-	lines(exp(predict(lm.1))~rds.result$observed_js , col='blue')
-	require(MASS)
-	(lm.2<- rlm(log(rds.result$beta_js)~log(rds.result$observed_js)-1, method = "MM"))
-	lines(exp(predict(lm.2))~rds.result$observed_js , col='green')
-}
-plot(col='lightgrey', Njs, type='h')
-
-
+#createDegreeCount <- function(network.size, network.density) {
+#	neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
+#	return(table(unlist(neighbour.count[neighbour.count>0])))
+#}
+#{
+#	Njs<- createDegreeCount(network.size = 500, network.density = 0.1)
+#	theta<- 3
+#	beta<- 1e-10
+#	tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1000))
+#	plot(degree.sampled.vec, type='h', main='Sample')
+#	
+#	str(rds.result<- estimate.rds.two.stage(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 
+#					method='BFGS',				
+#					initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
+#					control = generate.rds.control( maxit = 10), all.solutions = FALSE))
+#}
+#{
+#	plot(rds.result$beta_js~rds.result$observed_js)
+#	lines(lowess(rds.result$beta_js~rds.result$observed_js), col='red')
+#	lines( beta*rds.result$observed_js^theta  ~ rds.result$observed_js, lty=2)
+#	(lm.1<- lm(log(rds.result$beta_js)~log(rds.result$observed_js)))
+#	lines(exp(predict(lm.1))~rds.result$observed_js , col='blue')
+#	require(MASS)
+#	(lm.2<- rlm(log(rds.result$beta_js)~log(rds.result$observed_js), method = "MM"))
+#	lines(exp(predict(lm.2))~rds.result$observed_js , col='green')
+#}
+#plot(col='lightgrey', Njs, type='h')
+#
+#
 ## Manual creation:
 #Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
 # Good values2: theta<- 3, beta<- 5e-10
