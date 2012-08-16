@@ -62,8 +62,8 @@ inv.qnorm.theta<- function(qnorm.theta, ...){
 #	normalized.theta<- pnorm(qnorm.theta / const)
 #	normalized.theta2<- (normalized.theta*theta.range) + theta.minimum
 #	return(normalized.theta2)
-#	exp(qnorm.theta)
-	qnorm.theta
+	exp(qnorm.theta)
+#	qnorm.theta
 }
 
 
@@ -79,8 +79,8 @@ qnorm.theta<- function(theta, ...){
 #	normalized.theta<- (theta-theta.minimum)/theta.range
 #	result<- const*qnorm(normalized.theta)
 #	return(result)
-#	log(theta)
-	theta
+	log(theta)
+#	theta
 }
 
 
