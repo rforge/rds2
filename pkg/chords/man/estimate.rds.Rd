@@ -81,17 +81,17 @@ Each components includes:
    
    
 \examples{
+\dontrun{
+#### Commented due to long execution time.####
+
 #### Estimating assuming beta_j=beta * j^theta:
-data(simulation, package='chords')
+data(simulation)
 temp.data<- unlist(data3[1,7000:7500])
-(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2)), 
-control=generate.rds.control(maxit=20)))
+(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2))))
 plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 var.theta(temp.data, Njs=rds.result$Nj, theta=rds.result$theta, beta=rds.result$beta)
 
-
-
-#### Example of the two-stage estimation of beta_j:
+#### Example of the two-stage estimation of beta_j ####
 estimation3<- estimate.rds.two.stage(sampled.degree.vector=temp.data, Sij = make.Sij(temp.data), 
 											initial.values=list(theta=c(0.5,1,1.5)),
 											control=generate.rds.control(maxit=5))
@@ -99,15 +99,13 @@ plot(estimation3$beta_js~estimation3$observed_js)
 lines(lowess(estimation3$beta_js~estimation3$observed_js), col='red')
 
 
-\dontrun{
 ### Example using a full set of initialization values:
 Njs<- c(100,100,500,1000); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
 theta<- 1
 beta<- 1e-10
 tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e5))
 str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 				
-				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs))))	
-		
+				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs))))		
 	}
 }
 
@@ -119,8 +117,7 @@ str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.
 
 \references{
 	Respondent Driven Sampling as an Epidemic Process
-	Berchenko Y., Rosenblatt J.D., White R.G.,Frost S.D.W. (2012) 
-  \emph{?}  
+	Berchenko Y., Rosenblatt J.D., White R.G.,Frost S.D.W. (Submitted) 
 }
 
 

@@ -20,7 +20,6 @@
 }
 \references{
 	Respondent Driven Sampling as an Epidemic Process
-	Berchenko Y., Rosenblatt J.D., White R.G.,Frost S.D.W. (2012) 
-  \emph{####.}  
+	Berchenko Y., Rosenblatt J.D., White R.G.,Frost S.D.W. (Submitted)    
 }
 
