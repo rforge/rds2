@@ -4,7 +4,7 @@ Title: Estimation in respondent driven samples.
 Version: 0.67
 Date: 2012-07-19
 Author: Jonathan Rosenblatt
-Maintainer: Jonathan Rosenblatt <john.ros@gmail.com>
+Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>
 Description: Maximum likelihood estimation of population size and degree distribution.
 License: GPL-2
 Collate: 
