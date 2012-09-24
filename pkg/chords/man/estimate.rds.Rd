@@ -75,8 +75,8 @@ Each components includes:
   where   \eqn{\beta} is the base rate of sampling, \eqn{\theta} is the "coefficient of discoverability", \eqn{I[j]} it the number of individuals sampled up to time \eqn{j}, 
    \eqn{N[i]} is the number of individuals with degree \eqn{i} in the population, and \eqn{S[i,j]} is the number of individuals with degree \eqn{i} sampled up to time \eqn{j}.
    The function \code{estimate.rds} has to be given some initialization values. By default, it is given a grid of \eqn{\theta} values, but it can also be given a list including other parameter values (as in the example).
-   \code{estimate.rds.two.stage} works like \code{estimate.rds} but does not assume \eqn{\beta_j=\beta * j^ \theta }, so tries to estimate \eqn{\beta_j} directly. 
-   It does so in two stages: in the first it calls \code{estimate.rds}, and once the optimal values have been found, it relaxes the \eqn{\beta_j=\beta * j^ \theta } assumptions and optimizes for \eqn{\beta_j)}
+   \code{estimate.rds.two.stage} works like \code{estimate.rds} but does not assume \eqn{\beta[j]=\beta * j^ \theta }, so tries to estimate \eqn{\beta[j]} directly. 
+   It does so in two stages: in the first it calls \code{estimate.rds}, and once the optimal values have been found, it relaxes the \eqn{\beta[j]=\beta * j^ \theta } assumptions and optimizes for \eqn{\beta_j)}
    }
    
    
