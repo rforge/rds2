@@ -14,7 +14,7 @@
 	Compares the output of \link{estimate.rds} for different \eqn{\theta} initialization values.
 }
 \author{
-  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
+  Jonathan D. Rosenblatt \email{john.ros.work@gmail.com}
 }
 \seealso{
   \code{\link{estimate.rds}}  

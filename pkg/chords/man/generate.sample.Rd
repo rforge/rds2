@@ -36,7 +36,7 @@ A numeric vector of the degree of the individual sampled at each time step.}
 
 }
 \author{
-  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
+  Jonathan D. Rosenblatt \email{john.ros.work@gmail.com}
 }
 
 

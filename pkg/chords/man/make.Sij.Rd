@@ -14,7 +14,7 @@
   Make the \eqn{Sij} matrix from the sample path, assuming no drop outs during sampling.
 }
 \author{
-  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
+  Jonathan D. Rosenblatt \email{john.ros.work@gmail.com}
 }
 \seealso{
   \code{\link{estimate.rds}}  

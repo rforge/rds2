@@ -27,7 +27,7 @@ These functions were created in the view that theta values might be constrained 
 }
 
 \author{
-  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
+  Jonathan D. Rosenblatt \email{john.ros.work@gmail.com}
 }
 \seealso{
   \code{\link{estimate.rds}}  

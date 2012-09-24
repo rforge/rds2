@@ -111,7 +111,7 @@ str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.
 
 
 \author{
-  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
+  Jonathan D. Rosenblatt \email{john.ros.work@gmail.com}
 }
 
 

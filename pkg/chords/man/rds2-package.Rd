@@ -16,7 +16,7 @@
   the methodology in the reference. See \link{estimate.rds} for details.
 }
 \author{
-  Jonathan D. Rosenblatt \email{john.ros@gmail.com}
+  Jonathan D. Rosenblatt \email{john.ros.work@gmail.com}
 }
 \references{
 	Respondent Driven Sampling as an Epidemic Process
