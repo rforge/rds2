@@ -62,8 +62,8 @@ inv.qnorm.theta<- function(qnorm.theta, ...){
 #	normalized.theta<- pnorm(qnorm.theta / const)
 #	normalized.theta2<- (normalized.theta*theta.range) + theta.minimum
 #	return(normalized.theta2)
-	exp(qnorm.theta)
-#	qnorm.theta
+#	exp(qnorm.theta)
+	qnorm.theta
 }
 
 
@@ -79,8 +79,8 @@ qnorm.theta<- function(theta, ...){
 #	normalized.theta<- (theta-theta.minimum)/theta.range
 #	result<- const*qnorm(normalized.theta)
 #	return(result)
-	log(theta)
-#	theta
+#	log(theta)
+	theta
 }
 
 
@@ -212,7 +212,8 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 	
 	
 	
-	## TODO: B) Automate initialization values for theta. (maybe using moments of intervals between samples).
+	# TODO: B) Automate initialization values for theta. (maybe using moments of intervals between samples).
+	# TODO: A) Use better N_j initialization: IDW or inflated values.
 	generate.initial.values<- function(initial.values){
 		# compute maximal beta given other parameter values:
 		initial.log.beta.function<- function(theta) {
