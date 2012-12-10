@@ -159,7 +159,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 	max.observed.degree<- max(sampled.degree.vector)
 	N.j<- rep(0, max.observed.degree)
 	final.result<- NA
-	# Look for the degrees in the datawith non trivial estimates:
+	# Look for the degrees in the data with non trivial estimates:
 	Observed.Njs<-table(sampled.degree.vector)[-1] # table of degree counts withuot zero
 	Observed.js<- as.numeric(names(Observed.Njs))
 	maximal.degree.count<- max(Observed.Njs)
@@ -398,73 +398,188 @@ createDegreeCount <- function(network.size, network.density) {
 
 
 
+
+#### Grid Search ####
+
+## Grid search given all three parameters:
+grid.all.parameters<- function(sampled.degree.vector, Sij, grid.values, control=generate.rds.control()){
+	likelihood.names<- list(NULL, c("likelihood","theta.index","beta.index","Njs.index"))
+	likelihoods<- matrix(NA, ncol=length(likelihood.names[[2]]), nrow=prod(sapply(grid.values, length)) ,dimnames = likelihood.names)
+	likelihoods.row<- 1
+	for (theta.index in seq(along=grid.values$theta)){
+		for (beta.index in seq(along=grid.values$beta)){
+			for (Njs.index in seq(along=grid.values$Njs)){
+				temp.result<- estimate.rds(degree.sampled.vec, Sij = Sij, method='BFGS',				
+						initial.values = list(
+								theta=c(grid.values$theta[[theta.index]]), 
+								beta=c(grid.values$beta[[beta.index]]), 
+								Njs=grid.values$Njs[[Njs.index]]),  
+						control = control)
+				likelihoods[likelihoods.row,]<- c(temp.result$likelihood.optimum, theta.index, beta.index, Njs.index)
+				likelihoods.row<- likelihoods.row+1
+			}
+		}
+	}
+	# Return most likely solutions
+	max.index<- likelihoods[which.max(likelihoods[,1]),]
+	result<- list(
+			theta=grid.values$theta[max.index['theta.index']], 
+			beta=grid.values$beta[max.index['beta.index']], 
+			Njs=grid.values$Njs[[max.index['Njs.index']]][[1]], 
+			likelihood=max.index['likelihood']) 
+	
+	return(result)
+}
+## Testing:
+
+
+
+
+
+
+## Make grid of Njs given theta and beta:
+make.Njs<- function(sampled.degree.vector){
+	# Empirical counts
+	Observed.Njs <- table(sampled.degree.vector)[-1] # table of degree counts withuot zero
+	Observed.js <- as.numeric(names(Observed.Njs))
+	# Inflate empirical counts (arbitrary)
+	Observed.Njs.1 <- ceiling(Observed.Njs*1.5) 
+	Observed.Njs.2 <- rep(max(Observed.Njs), length(Observed.Njs))
+	names(Observed.Njs.2)<- Observed.js
+	
+	# Inflate empirical counts (informed)
+	
+	# Return list of options:
+	result<- list(list(Observed.Njs), list(Observed.Njs.1), list(Observed.Njs.2))
+	return(result)
+}
+## Testing:
+#make.Njs(degree.sampled.vec)
+
+
+
+## Grid search given theta and beta parameters:
+grid.two.parameters<- function(sampled.degree.vector, Sij, grid.values, control){
+	grid.values$Njs<- make.Njs(sampled.degree.vector)	
+	
+	result<- grid.all.parameters(sampled.degree.vector, Sij, grid.values, control)
+	return(result)	
+}
+## Testing:
+
+
+
+
+
+
+
+
+initialLogBetas <- function(sampled.degree.vector, theta) {
+	max.observed.degree<- max(sampled.degree.vector)
+	maximal.degree.count<- max(table(sampled.degree.vector))
+	beta<- 1/ (sum(sampled.degree.vector) * maximal.degree.count * max.observed.degree^theta )
+	return(log(beta)+log(0.9))
+}
+## Testing:
+#initialLogBetas(sampled.degree.vector = sampled.degree.vector, theta = theta)
+
+
+
+
+
+
+makeBetas <- function(sampled.degree.vector, grid.values, control){
+	thetas<- grid.values$theta
+	inflations<- c(1,10,100)
+	betas<- rep(NA, length=length(thetas)*length(inflations))
+	i<- 1
+	for( theta in thetas){
+		for( inflation in inflations){
+			betas[[i]]<-exp(initialLogBetas(sampled.degree.vector, theta=theta))*inflation
+			i<- i+1
+		}		
+	}	
+	return(list(theta=thetas, beta=betas))
+}
+## Testing:
+#makeBetas(degree.sampled.vec, grid.values = grid.values, control = generate.rds.control( maxit = 10))
+
+
+
+
+
+
+
+
+
+
+
+## Grid search given theta and beta parameters:
+grid.one.parameters <- function(sampled.degree.vector, Sij, grid.values, control){
+	grid.values<- makeBetas(sampled.degree.vector, grid.values, control)
+	
+	result<- grid.two.parameters(sampled.degree.vector, Sij, grid.values, control)
+	return(result)
+}
+## Testing:
+#grid.one.parameters(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), grid.values = grid.values,	control = generate.rds.control( maxit = 10))
+
+
+
+
+
+
+
 # Optimize using grid search:
-#estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE){
-#	## Grid given theta alone:
-#	## TODO: A) Grid of theta given beta
-#	
-#	
-#	## Grid given theta and beta
-#	
-#	
-#	
-#	## Grid of theta, beta and Njs:
-#	# Compute likelihood over all grid values
-#	likelihood.names<- list(NULL, c("likelihood","theta.index","beta.index","Njs.index"))
-#	likelihoods<- matrix(NA, ncol=length(likelihood.names[[2]]), nrow=prod(sapply(grid.values, length)) ,dimnames = likelihood.names)
-#	likelihoods.row<- 1
-#	for (theta.index in seq(along=grid.values$theta)){
-#		for (beta.index in seq(along=grid.values$beta)){
-#			for (Njs.index in seq(along=grid.values$Njs)){
-#				temp.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), method='BFGS',				
-#						initial.values = list(
-#								theta=c(grid.values$theta[[theta.index]]), 
-#								beta=c(grid.values$beta[[beta.index]]), 
-#								Njs=grid.values$Njs[Njs.index]),  
-#						control = control)
-#				likelihoods[likelihoods.row,]<- c(temp.result$likelihood.optimum, theta.index, beta.index, Njs.index)
-#				likelihoods.row<- likelihoods.row+1
-#			}
-#		}
-#	}
-#	
-#	# Return most likely solution
-#	max.index<- likelihoods[which.max(likelihoods$likelihood),]
-#	
-#	
-#	result<- list(
-#			theta=grid.values$theta[max.index$theta.index], 
-#			beta=grid.values$beta[max.index$beta.index], 
-#			Njs=grid.values$Njs[max.index$Njs.index], 
-#			likelihood=max.index$likelihood) 
-#			
-#	return(output)
-#	
-#}
-### Testing:
-# Manual creation:
+estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE){
+	## Grid of theta, beta and Njs:
+	# Compute likelihood over all grid values
+	if(length(grid.values)==3L) result<- grid.all.parameters(sampled.degree.vector, Sij, grid.values, control)	
+	
+	
+	## Grid given theta and beta
+	if(length(grid.values)==2L) result<- grid.two.parameters(sampled.degree.vector, Sij, grid.values, control)	
+	
+	
+	## Grid given theta alone:
+	if(length(grid.values)==1L) result<- grid.one.parameters(sampled.degree.vector, Sij, grid.values, control)	
+	
+	return(result)
+	
+}
+## Testing:
+# Create data: 
+#require(chords)
 #Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
-## Good values2: theta<- 3, beta<- 5e-10
 #theta<- 1
-#beta<- 5e-8
-#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
+#beta<- 2.5e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
 #plot(degree.sampled.vec, type='h', main='Sample')
-#
-#
-## Testing with initialization from **true** values:
-#str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), method='BFGS',				
+# Veryfying likelihood computation:
+#estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), method='BFGS',				
 #				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
-#				control = generate.rds.control( maxit = 3000)))
-#str(rds.result)
-#plot(Njs, type='h', lwd=2.5)	
-#points(rds.result$Nj, type='h', col='orange', lwd=2)
-#points(rds.result[[1]]$Nj, type='h', col='orange', lwd=2)
-#points(rds.result[[2]]$Nj, type='h', col='orange', lwd=2)
-#points(rds.result[[3]]$Nj, type='h', col='orange', lwd=2)
-#grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=2), beta=seq(beta*0.5, beta*1.5, length=2), Njs=list(list(Njs), list(Njs*1.5) ))
+#				control = generate.rds.control( maxit = 10))		
+#
+##### Grid over (theta,beta,Njs) from true parameter values:
+#grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3), beta=seq(beta*0.5, beta*1.5, length=3), Njs=list(list(Njs*0.5), list(Njs), list(Njs*1.5) ))
+#estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
+#		grid.values = grid.values,  
+#		control = generate.rds.control( maxit = 1))
+###### Grid over (theta,beta) from true parameter values:
+#grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3), beta=seq(beta*0.5, beta*1.5, length=3))
+#estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
+#		grid.values = grid.values,  
+#		control = generate.rds.control( maxit = 1))
+#### Grid over (theta) from true parameter values:
+#grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3))
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
 #		grid.values = grid.values,  
 #		control = generate.rds.control( maxit = 10))
+
+
+
+
+
 
 
 
