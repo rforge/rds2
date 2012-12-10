@@ -246,7 +246,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 				c(
 						canonical.beta=log(beta) ,
 						canonical.theta=do.call(qnorm.theta, c(theta=theta, control)) ,
-						logNjs=log(Njs)#+1
+						logNjs=log(Njs)
 				)
 			}
 			returned.initial.values<- mapply(wrap.initial.values, beta= initial.values$beta, theta=initial.values$theta, Njs=initial.values$Njs, SIMPLIFY=FALSE )
@@ -345,15 +345,15 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 #plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 #var.theta(temp.data, Sij = make.Sij(temp.data), Njs=rds.result$Nj, theta=rds.result$theta, 
 #		beta=rds.result$c)
-#
-#			 
-#
-#createDegreeCount <- function(network.size, network.density) {
-#	neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
-#	return(table(unlist(neighbour.count[neighbour.count>0])))
-#}
-## Good values1: network.size = 500, network.density = 0.1, theta<- 3, beta<- 1e-10
-##(Njs<- createDegreeCount(network.size = 1e5, network.density = 0.01))
+
+			 
+
+createDegreeCount <- function(network.size, network.density) {
+	neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
+	return(table(unlist(neighbour.count[neighbour.count>0])))
+}
+# Good values1: network.size = 500, network.density = 0.1, theta<- 3, beta<- 1e-10
+#(Njs<- createDegreeCount(network.size = 1e5, network.density = 0.01))
 ## Manual creation:
 #Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
 ## Good values2: theta<- 3, beta<- 5e-10
@@ -391,6 +391,82 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 #				initial.values = list(theta=c(-1, 0.5, 2, 8), beta=c(1e-13, 1e-1, 1e-5)), 
 #				method="BFGS", control = generate.rds.control(maxit = 1000)))
 #str(rds.result)
+
+
+
+
+
+
+
+# Optimize using grid search:
+#estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE){
+#	## Grid given theta alone:
+#	## TODO: A) Grid of theta given beta
+#	
+#	
+#	## Grid given theta and beta
+#	
+#	
+#	
+#	## Grid of theta, beta and Njs:
+#	# Compute likelihood over all grid values
+#	likelihood.names<- list(NULL, c("likelihood","theta.index","beta.index","Njs.index"))
+#	likelihoods<- matrix(NA, ncol=length(likelihood.names[[2]]), nrow=prod(sapply(grid.values, length)) ,dimnames = likelihood.names)
+#	likelihoods.row<- 1
+#	for (theta.index in seq(along=grid.values$theta)){
+#		for (beta.index in seq(along=grid.values$beta)){
+#			for (Njs.index in seq(along=grid.values$Njs)){
+#				temp.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), method='BFGS',				
+#						initial.values = list(
+#								theta=c(grid.values$theta[[theta.index]]), 
+#								beta=c(grid.values$beta[[beta.index]]), 
+#								Njs=grid.values$Njs[Njs.index]),  
+#						control = control)
+#				likelihoods[likelihoods.row,]<- c(temp.result$likelihood.optimum, theta.index, beta.index, Njs.index)
+#				likelihoods.row<- likelihoods.row+1
+#			}
+#		}
+#	}
+#	
+#	# Return most likely solution
+#	max.index<- likelihoods[which.max(likelihoods$likelihood),]
+#	
+#	
+#	result<- list(
+#			theta=grid.values$theta[max.index$theta.index], 
+#			beta=grid.values$beta[max.index$beta.index], 
+#			Njs=grid.values$Njs[max.index$Njs.index], 
+#			likelihood=max.index$likelihood) 
+#			
+#	return(output)
+#	
+#}
+### Testing:
+# Manual creation:
+#Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+## Good values2: theta<- 3, beta<- 5e-10
+#theta<- 1
+#beta<- 5e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
+#plot(degree.sampled.vec, type='h', main='Sample')
+#
+#
+## Testing with initialization from **true** values:
+#str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), method='BFGS',				
+#				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
+#				control = generate.rds.control( maxit = 3000)))
+#str(rds.result)
+#plot(Njs, type='h', lwd=2.5)	
+#points(rds.result$Nj, type='h', col='orange', lwd=2)
+#points(rds.result[[1]]$Nj, type='h', col='orange', lwd=2)
+#points(rds.result[[2]]$Nj, type='h', col='orange', lwd=2)
+#points(rds.result[[3]]$Nj, type='h', col='orange', lwd=2)
+#grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=2), beta=seq(beta*0.5, beta*1.5, length=2), Njs=list(list(Njs), list(Njs*1.5) ))
+#estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
+#		grid.values = grid.values,  
+#		control = generate.rds.control( maxit = 10))
+
+
 
 
 
