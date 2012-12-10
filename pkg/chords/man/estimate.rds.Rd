@@ -3,6 +3,8 @@
 \alias{generate.rds.control}
 \alias{var.theta}
 \alias{estimate.rds.two.stage}
+\alias{estimate.rds.grid}
+
 
 \title{ Degree distribution estimation in respondent driven samples }
 \usage{
@@ -13,7 +15,8 @@
     generate.rds.control(maxit=2000)
     
     estimate.rds.two.stage(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
-
+    
+    estimate.rds.grid(sampled.degree.vector, Sij , grid.values , control=generate.rds.control(maxit = 10))
 }
 
 
@@ -39,6 +42,8 @@
   \item{maxit}{Used by \code{generate.rds.control} to control the behavious of \code{\link{optim}}.}
   
   \item{all.solutions}{Should all local maxima be returned or just one.} 
+  
+  \item{grid.values}{List of parameter values to search over. Can include (a) \eqn{\theta} vector only, (b) \eqn{\theta} and \eqn{\beta} vectors or (c) \eqn{\theta}, \eqn{\beta} and a \eqn{N[j]} lists. See examples of \code{estimate.rds.grid} for usage.}
 
 }
 
@@ -63,12 +68,14 @@ Each components includes:
 
 \code{estimate.rds.two.stage}  will not return \eqn{\theta} and \eqn{\beta} but rather a vector of \eqn{\beta_j} for all observed degrees.  
 
+\code{estimate.rds.grid} will return parameter estimates without convergence details as optimization is done using a grid search.
+
 \code{generate.rds.control} returns a list of control values needed by \code{estimate.rds}. At present this includes only the number of \code{\link{optim}} iterations.
 }
 
 
 \details{
-\code{estimate.rds} performs maximum likelihood estimation of the population
+\code{estimate.rds} and \code{estimate.rds.grid} performs maximum likelihood estimation of the population
   size, degree distribution and "coefficient of discoverability" as described in the reference.   
   The method assumes the probability of sampling an individual with degree i at time j is given by: 
   \deqn{\beta I[j] (N[i]-S[i,j]) i^\theta }
@@ -77,14 +84,44 @@ Each components includes:
    The function \code{estimate.rds} has to be given some initialization values. By default, it is given a grid of \eqn{\theta} values, but it can also be given a list including other parameter values (as in the example).
    \code{estimate.rds.two.stage} works like \code{estimate.rds} but does not assume \eqn{\beta[j]=\beta * j^ \theta }, so tries to estimate \eqn{\beta[j]} directly. 
    It does so in two stages: in the first it calls \code{estimate.rds}, and once the optimal values have been found, it relaxes the \eqn{\beta[j]=\beta * j^ \theta } assumptions and optimizes for \eqn{\beta_j)}
+   The function \code{estimate.rds.grid} does a grid search over all combinations of given parameter values. It is currently the recommended alternative for small and intermediate sample sizes as \code{estimate.rds} tends to converge to local maxima. For large samples, \code{estimate.rds} is a faster and reliable alternative.  
    }
    
    
 \examples{
 \dontrun{
-#### Commented due to long execution time.####
+#### Commented due to long run time ####
 
-#### Estimating assuming beta_j=beta * j^theta:
+#### Demonstrating optimization using grid search ######
+# Generate data:	
+Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+theta<- 1
+beta<- 2.5e-8
+tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
+plot(degree.sampled.vec, type='h', main='Sample')
+
+# Grid over (theta,beta,Njs) from true parameter values:
+grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3), beta=seq(beta*0.5, beta*1.5, length=3), Njs=list(list(Njs*0.5), list(Njs), list(Njs*1.5) ))
+estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
+		grid.values = grid.values,  
+		control = generate.rds.control( maxit = 1))
+		
+# Grid over (theta,beta) from true parameter values:
+grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3), beta=seq(beta*0.5, beta*1.5, length=3))
+estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
+		grid.values = grid.values,  
+		control = generate.rds.control( maxit = 1))
+		
+# Grid over (theta) from true parameter values:
+grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3))
+estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
+		grid.values = grid.values,  
+		control = generate.rds.control( maxit = 10))
+
+
+
+
+#### Estimating using non-grid optimization schemes:
 data(simulation)
 temp.data<- unlist(data3[1,7000:7500])
 (rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2))))
@@ -105,8 +142,8 @@ theta<- 1
 beta<- 1e-10
 tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e5))
 str(rds.result<- estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 				
-				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs))))		
-	}
+				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs))))
+}
 }
 
 

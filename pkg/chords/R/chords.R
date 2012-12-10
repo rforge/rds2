@@ -409,7 +409,7 @@ grid.all.parameters<- function(sampled.degree.vector, Sij, grid.values, control=
 	for (theta.index in seq(along=grid.values$theta)){
 		for (beta.index in seq(along=grid.values$beta)){
 			for (Njs.index in seq(along=grid.values$Njs)){
-				temp.result<- estimate.rds(degree.sampled.vec, Sij = Sij, method='BFGS',				
+				temp.result<- estimate.rds(sampled.degree.vector, Sij = Sij, method='BFGS',				
 						initial.values = list(
 								theta=c(grid.values$theta[[theta.index]]), 
 								beta=c(grid.values$beta[[beta.index]]), 
@@ -515,7 +515,7 @@ makeBetas <- function(sampled.degree.vector, grid.values, control){
 
 
 ## Grid search given theta and beta parameters:
-grid.one.parameters <- function(sampled.degree.vector, Sij, grid.values, control){
+grid.one.parameters <- function(sampled.degree.vector, Sij, grid.values, control=generate.rds.control(maxit = 10)){
 	grid.values<- makeBetas(sampled.degree.vector, grid.values, control)
 	
 	result<- grid.two.parameters(sampled.degree.vector, Sij, grid.values, control)
@@ -531,7 +531,7 @@ grid.one.parameters <- function(sampled.degree.vector, Sij, grid.values, control
 
 
 # Optimize using grid search:
-estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE){
+estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values, control=generate.rds.control(maxit=10)){
 	## Grid of theta, beta and Njs:
 	# Compute likelihood over all grid values
 	if(length(grid.values)==3L) result<- grid.all.parameters(sampled.degree.vector, Sij, grid.values, control)	
@@ -575,6 +575,14 @@ estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values, arc=FALSE,
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
 #		grid.values = grid.values,  
 #		control = generate.rds.control( maxit = 10))
+##### Testing with true data:
+#data(simulation, package='chords')
+#temp.data<- unlist(data3[1,7000:7500])
+## Initialize only with thetas:
+#grid.values<- list(theta=seq(-1,1,by=0.2), beta=c(seq(1e-14, 1e-9, length=5)))
+#(rds.result.grid<- estimate.rds.grid(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), grid.values=grid.values))
+#str(rds.result)
+#plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 
 
 
