@@ -124,8 +124,8 @@ compute.S<- function(Sij){
 
 
 
-generate.rds.control<- function(maxit=2000){
-	return(list(maxit=maxit))
+generate.rds.control<- function(maxit=2000, method="BFGS"){
+	return(list(maxit=maxit, method=method))
 }
 
 
@@ -154,7 +154,7 @@ generate.rds.control<- function(maxit=2000){
 #'plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 #'var.theta(temp.data, Njs=rds.result$Nj, theta=rds.result$theta, beta=rds.result$beta)
 
-estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE) {  	
+estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE) {  	
   	# Initializing:
 	max.observed.degree<- max(sampled.degree.vector)
 	N.j<- rep(0, max.observed.degree)
@@ -164,6 +164,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, method="BFGS", initial.valu
 	Observed.js<- as.numeric(names(Observed.Njs))
 	maximal.degree.count<- max(Observed.Njs)
 	the.call<- sys.call()
+	method=control$method
 	
 	
 	# Compute the size of the snowball along the sample:
@@ -403,13 +404,17 @@ createDegreeCount <- function(network.size, network.density) {
 
 ## Grid search given all three parameters:
 grid.all.parameters<- function(sampled.degree.vector, Sij, grid.values, control=generate.rds.control()){
+	# Initializing:
+	method <- control$method	
+	
+	# Grid search:
 	likelihood.names<- list(NULL, c("likelihood","theta.index","beta.index","Njs.index"))
 	likelihoods<- matrix(NA, ncol=length(likelihood.names[[2]]), nrow=prod(sapply(grid.values, length)) ,dimnames = likelihood.names)
 	likelihoods.row<- 1
 	for (theta.index in seq(along=grid.values$theta)){
 		for (beta.index in seq(along=grid.values$beta)){
 			for (Njs.index in seq(along=grid.values$Njs)){
-				temp.result<- estimate.rds(sampled.degree.vector, Sij = Sij, method='BFGS',				
+				temp.result<- estimate.rds(sampled.degree.vector, Sij = Sij, 				
 						initial.values = list(
 								theta=c(grid.values$theta[[theta.index]]), 
 								beta=c(grid.values$beta[[beta.index]]), 
@@ -556,31 +561,31 @@ estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values, control=ge
 #tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
 #plot(degree.sampled.vec, type='h', main='Sample')
 # Veryfying likelihood computation:
-#estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), method='BFGS',				
+#estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 				
 #				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
-#				control = generate.rds.control( maxit = 10))		
+#				control = generate.rds.control( maxit = 10, method="Nelder-Mead"))		
 #
 ##### Grid over (theta,beta,Njs) from true parameter values:
 #grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3), beta=seq(beta*0.5, beta*1.5, length=3), Njs=list(list(Njs*0.5), list(Njs), list(Njs*1.5) ))
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
 #		grid.values = grid.values,  
-#		control = generate.rds.control( maxit = 1))
+#		control = generate.rds.control( maxit = 1, method="Nelder-Mead"))
 ###### Grid over (theta,beta) from true parameter values:
 #grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3), beta=seq(beta*0.5, beta*1.5, length=3))
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
 #		grid.values = grid.values,  
-#		control = generate.rds.control( maxit = 1))
+#		control = generate.rds.control( maxit = 1, method="Nelder-Mead"))
 #### Grid over (theta) from true parameter values:
 #grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3))
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
 #		grid.values = grid.values,  
-#		control = generate.rds.control( maxit = 10))
+#		control = generate.rds.control( maxit = 10, method="Nelder-Mead"))
 ##### Testing with true data:
 #data(simulation, package='chords')
 #temp.data<- unlist(data3[1,7000:7500])
 ## Initialize only with thetas:
 #grid.values<- list(theta=seq(-1,1,by=0.2), beta=c(seq(1e-14, 1e-9, length=5)))
-#(rds.result.grid<- estimate.rds.grid(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), grid.values=grid.values))
+#(rds.result.grid<- estimate.rds.grid(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), grid.values=grid.values), control = generate.rds.control( maxit = 1, method="Nelder-Mead"))
 #str(rds.result)
 #plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 

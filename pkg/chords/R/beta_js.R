@@ -270,7 +270,8 @@ prepare.initialization<- function(free.beta.fit){
 
 
 
-estimate.rds.two.stage<- function(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE){
+estimate.rds.two.stage<- function(sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE){
+	method<- control$method
 	first.estimates<- estimate.rds(sampled.degree.vector, Sij, method, initial.values, arc, control, all.solutions = TRUE)
 	second.stage<- list()
 	for(i in seq(along=first.estimates)){

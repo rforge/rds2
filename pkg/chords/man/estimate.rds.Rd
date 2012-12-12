@@ -8,13 +8,13 @@
 
 \title{ Degree distribution estimation in respondent driven samples }
 \usage{
-  	estimate.rds(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
+  	estimate.rds(sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
      
     var.theta(sampled.degree.vector, Sij, Njs, theta, beta)
     
-    generate.rds.control(maxit=2000)
+    generate.rds.control(maxit=2000, method="BFGS")
     
-    estimate.rds.two.stage(sampled.degree.vector, Sij, method="BFGS", initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
+    estimate.rds.two.stage(sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
     
     estimate.rds.grid(sampled.degree.vector, Sij , grid.values , control=generate.rds.control(maxit = 10))
 }
