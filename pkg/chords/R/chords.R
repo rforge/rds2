@@ -124,9 +124,15 @@ compute.S<- function(Sij){
 
 
 
-generate.rds.control<- function(maxit=2000, method="BFGS"){
-	return(list(maxit=maxit, method=method))
+generate.rds.control<- function(
+		maxit=2000, 
+		method="Nelder-Mead",
+		Nj.inflations=c(1,2,10),
+		beta.inflations= exp(-seq(2,0, by=-0.02))){
+	return(list(maxit=maxit, method=method, Nj.inflations=Nj.inflations, beta.inflations=beta.inflations))
 }
+## Testing:
+#generate.rds.control()
 
 
 
@@ -402,83 +408,8 @@ createDegreeCount <- function(network.size, network.density) {
 
 #### Grid Search ####
 
-## Grid search given all three parameters:
-grid.all.parameters<- function(sampled.degree.vector, Sij, grid.values, control=generate.rds.control()){
-	# Initializing:
-	method <- control$method	
-	
-	# Grid search:
-	likelihood.names<- list(NULL, c("likelihood","theta.index","beta.index","Njs.index"))
-	likelihoods<- matrix(NA, ncol=length(likelihood.names[[2]]), nrow=prod(sapply(grid.values, length)) ,dimnames = likelihood.names)
-	likelihoods.row<- 1
-	for (theta.index in seq(along=grid.values$theta)){
-		for (beta.index in seq(along=grid.values$beta)){
-			for (Njs.index in seq(along=grid.values$Njs)){
-				temp.result<- estimate.rds(sampled.degree.vector, Sij = Sij, 				
-						initial.values = list(
-								theta=c(grid.values$theta[[theta.index]]), 
-								beta=c(grid.values$beta[[beta.index]]), 
-								Njs=grid.values$Njs[[Njs.index]]),  
-						control = control)
-				likelihoods[likelihoods.row,]<- c(temp.result$likelihood.optimum, theta.index, beta.index, Njs.index)
-				likelihoods.row<- likelihoods.row+1
-			}
-		}
-	}
-	# Return most likely solutions
-	max.index<- likelihoods[which.max(likelihoods[,1]),]
-	result<- list(
-			theta=grid.values$theta[max.index['theta.index']], 
-			beta=grid.values$beta[max.index['beta.index']], 
-			Njs=grid.values$Njs[[max.index['Njs.index']]][[1]], 
-			likelihood=max.index['likelihood']) 
-	
-	return(result)
-}
-## Testing:
 
-
-
-
-
-
-## Make grid of Njs given theta and beta:
-make.Njs<- function(sampled.degree.vector){
-	# Empirical counts
-	Observed.Njs <- table(sampled.degree.vector)[-1] # table of degree counts withuot zero
-	Observed.js <- as.numeric(names(Observed.Njs))
-	# Inflate empirical counts (arbitrary)
-	Observed.Njs.1 <- ceiling(Observed.Njs*1.5) 
-	Observed.Njs.2 <- rep(max(Observed.Njs), length(Observed.Njs))
-	names(Observed.Njs.2)<- Observed.js
-	
-	# Inflate empirical counts (informed)
-	
-	# Return list of options:
-	result<- list(list(Observed.Njs), list(Observed.Njs.1), list(Observed.Njs.2))
-	return(result)
-}
-## Testing:
-#make.Njs(degree.sampled.vec)
-
-
-
-## Grid search given theta and beta parameters:
-grid.two.parameters<- function(sampled.degree.vector, Sij, grid.values, control){
-	grid.values$Njs<- make.Njs(sampled.degree.vector)	
-	
-	result<- grid.all.parameters(sampled.degree.vector, Sij, grid.values, control)
-	return(result)	
-}
-## Testing:
-
-
-
-
-
-
-
-
+# Creates loose bound on maximal (log) beta values given theta and data:
 initialLogBetas <- function(sampled.degree.vector, theta) {
 	max.observed.degree<- max(sampled.degree.vector)
 	maximal.degree.count<- max(table(sampled.degree.vector))
@@ -486,32 +417,119 @@ initialLogBetas <- function(sampled.degree.vector, theta) {
 	return(log(beta)+log(0.9))
 }
 ## Testing:
-#initialLogBetas(sampled.degree.vector = sampled.degree.vector, theta = theta)
+#initialLogBetas(sampled.degree.vector = rpois(200,2), theta = 1)
 
 
 
 
 
-
-makeBetas <- function(sampled.degree.vector, grid.values, control){
-	thetas<- grid.values$theta
-	inflations<- c(1,10,100)
-	betas<- rep(NA, length=length(thetas)*length(inflations))
-	i<- 1
-	for( theta in thetas){
-		for( inflation in inflations){
-			betas[[i]]<-exp(initialLogBetas(sampled.degree.vector, theta=theta))*inflation
-			i<- i+1
-		}		
-	}	
-	return(list(theta=thetas, beta=betas))
+# Given a list of thetas and data, guesses beta values for each theta:
+makeBetaGrid<- function(sampled.degree.vector, thetas, betas, beta.inflations){
+	result<-list()
+	for (theta in thetas){
+		for(beta in betas){
+			for (inflation in beta.inflations){
+				#max.beta<- exp(initialLogBetas(sampled.degree.vector, theta))
+				result<- c(result, list(c(theta=theta, beta=beta*inflation)))			
+			}		
+		}
+	}
+	return(result)
 }
 ## Testing:
-#makeBetas(degree.sampled.vec, grid.values = grid.values, control = generate.rds.control( maxit = 10))
+#detach("package:chords")
+#require(chords)
+#Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+#theta<- 1
+#beta<- 2.5e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
+#makeBetaGrid(degree.sampled.vec, theta+c(-0.5, 0, 0.5), deflations= c(1,10,100))
+
+
+
+# Make grid of Njs given theta and beta:
+makeNjGrid<- function(sampled.degree.vector, theta.beta.grid, Nj.inflations){
+	# Empirical counts
+	Observed.Njs <- table(sampled.degree.vector)[-1] # table of degree counts withuot zero
+	Observed.js <- as.numeric(names(Observed.Njs))
+	
+	# Inflate empirical counts (arbitrary)
+	result<- list()
+	for (theta.beta in theta.beta.grid){
+		for (inflation in Nj.inflations){
+			Njs<-  ceiling(Observed.Njs*inflation)
+			names(Njs)<- Observed.js
+			Njs.list<- list(Njs)
+			result<- c(result, list(c(theta.beta, Nj=Njs.list)))
+		}
+	}
+			
+	# Return list of options:
+	return(result)
+}
+## Testing:
+#makeNjGrid(degree.sampled.vec, theta.beta.grid, c(1,1000))
 
 
 
 
+
+## Grid search given all three parameters:
+grid.all.parameters<- function(sampled.degree.vector, Sij, grid.values, control){
+	# Initializing:
+	method <- control$method
+	
+	temp.estimate.rds<- function(parameters) {
+		result<-try(estimate.rds(
+						sampled.degree.vector, 
+						Sij = Sij,
+						control = control,
+						initial.values = list(theta=c(parameters$theta), 
+								beta=c(parameters$beta), 
+								Njs=list(parameters$Nj))), 
+				silent=TRUE)
+		if(length(result)>2) return(result$likelihood.optimum)
+		else(return(-999999))
+	}
+	likelihoods<-lapply(grid.values, temp.estimate.rds)
+		
+	# Return most likely solutions
+	max.index<- which.max(unlist(likelihoods))
+	result<- list(
+			theta=grid.values[[max.index]]$theta, 
+			beta=grid.values[[max.index]]$beta, 
+			Njs=grid.values[[max.index]]$Nj, 
+			likelihood=likelihoods[[max.index]]
+	) 
+	
+	return(result)
+}
+## Testing:
+# Create data: 
+#detach("package:chords")
+#require(chords)
+#Njs<- c(20,20,20,20); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+#theta<- 1.2
+#beta<- 1.2e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
+#plot(degree.sampled.vec, type='h', main='Sample')
+## Veryfying likelihood computation:
+#beta.deflations<- c(1)
+#Nj.infaltions<- c(1,2,10)
+#thetas<- theta * c(0.9,1,1.1)
+#betas<- beta *c(0.9,1,1.1)
+#theta.beta.grid<- makeBetaGrid(degree.sampled.vec, thetas, betas, beta.deflations)
+#grid.values<- makeNjGrid(degree.sampled.vec, theta.beta.grid, Nj.infaltions)		
+#
+#grid.all.parameters(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
+#		grid.values = grid.values,  
+#		control = generate.rds.control( maxit = 20, method="Nelder-Mead"))
+#
+#estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), control = generate.rds.control(maxit=10, method="Nelder-Mead"),
+#		initial.values = list(theta=theta, beta=beta, Njs=list(Njs*runif(length(Njs),0.9,1.1))))
+#
+#estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), control = generate.rds.control(maxit=10, method="BFGS"),
+#		initial.values = list(theta=theta, beta=beta, Njs=list(Njs*2)))
 
 
 
@@ -520,74 +538,175 @@ makeBetas <- function(sampled.degree.vector, grid.values, control){
 
 
 ## Grid search given theta and beta parameters:
-grid.one.parameters <- function(sampled.degree.vector, Sij, grid.values, control=generate.rds.control(maxit = 10)){
-	grid.values<- makeBetas(sampled.degree.vector, grid.values, control)
+grid.two.parameters<- function(sampled.degree.vector, Sij, grid.values, Nj.infaltions, control){
+	grid.values<- makeNjGrid(sampled.degree.vector, grid.values, Nj.infaltions)
 	
-	result<- grid.two.parameters(sampled.degree.vector, Sij, grid.values, control)
+	result<- grid.all.parameters(sampled.degree.vector, Sij, grid.values, control)
+	return(result)	
+}
+## Testing:
+#Njs<- c(20,20,20,20); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+#theta<- 1.2
+#beta<- 1.2e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
+#plot(degree.sampled.vec, type='h', main='Sample')
+#
+#beta.deflations<- c(1)
+#Nj.infaltions<- c(1,2,10)
+#thetas<- theta * c(0.9,1,1.1)
+#betas<- beta *c(0.9,1,1.1)
+#theta.beta.grid<- makeBetaGrid(degree.sampled.vec, thetas, betas, beta.deflations)
+#
+#grid.two.parameters(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),	Nj.infaltions = Nj.infaltions,			
+#		grid.values = theta.beta.grid,  
+#		control = generate.rds.control( maxit = 20, method="Nelder-Mead"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+## Grid search given theta alone:
+grid.one.parameters <- function(sampled.degree.vector, Sij, thetas, beta.inflations=c(1), Nj.inflations, 
+		control){
+	betas<- c()
+	for(theta in thetas) betas<- c(betas, exp(initialLogBetas(sampled.degree.vector, theta)))
+	
+	theta.beta.values<- makeBetaGrid(sampled.degree.vector, thetas, betas, beta.inflations)
+	
+	result<- grid.two.parameters(sampled.degree.vector, Sij, theta.beta.values, Nj.infaltions = Nj.inflations, control)
 	return(result)
 }
 ## Testing:
-#grid.one.parameters(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), grid.values = grid.values,	control = generate.rds.control( maxit = 10))
+#Njs<- c(20,20,20,20); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+#theta<- 1.2
+#beta<- 1.2e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
+#plot(degree.sampled.vec, type='h', main='Sample')
+#
+#Nj.infaltions<- c(1,2,10)
+#thetas<- theta * c(0.9,1,1.1)
+#
+#grid.one.parameters(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 
+#		thetas = thetas, Nj.inflations = Nj.infaltions,
+#		beta.inflations= c(1, 100, 1e3, 1e5),
+#		control = generate.rds.control( maxit = 10, method="Nelder-Mead"))
 
 
 
 
 
 
+## FIXME: estimate.rds.grid
 
 # Optimize using grid search:
-estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values, control=generate.rds.control(maxit=10)){
+estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values,		
+		control=generate.rds.control(maxit=10, method="Nelder-Mead")){
+	
+	message('Caution: This might take several hours to run. Consider estimate.rds as a faster (but less robust) alternative.')
+	
+	Nj.inflations<- control$Nj.inflations
+	beta.inflations<- control$beta.inflations
+	
+	## Initiate using no values: 
+	## TODO: generateThetaGrid()
+	if (missing(grid.values)) {
+		grid.values<- seq(-1,1, by=0.1)		
+		result<- grid.one.parameters(sampled.degree.vector, Sij = Sij, 
+				thetas = grid.values, Nj.inflations = Nj.inflations,
+				beta.inflations= beta.inflations,
+				control = control)
+	}
+	
+	
+	
 	## Grid of theta, beta and Njs:
-	# Compute likelihood over all grid values
-	if(length(grid.values)==3L) result<- grid.all.parameters(sampled.degree.vector, Sij, grid.values, control)	
+	else if(length(grid.values[[1]])==3L) {
+		result<- grid.all.parameters(sampled.degree.vector, Sij = Sij, grid.values = grid.values, control = control)
+	} 	
 	
-	
+
 	## Grid given theta and beta
-	if(length(grid.values)==2L) result<- grid.two.parameters(sampled.degree.vector, Sij, grid.values, control)	
+	else if(length(grid.values[[1]])==2L) {
+		result<- grid.two.parameters(sampled.degree.vector, Sij = Sij,	
+				Nj.infaltions = Nj.inflations,			
+				grid.values = grid.values,  
+				control = control)
+	}
 	
+				
 	
 	## Grid given theta alone:
-	if(length(grid.values)==1L) result<- grid.one.parameters(sampled.degree.vector, Sij, grid.values, control)	
+	else if(length(grid.values[[1]])==1L) {
+		result<- grid.one.parameters(sampled.degree.vector, Sij = Sij, 
+				thetas = grid.values, Nj.inflations = Nj.inflations,
+				beta.inflations= beta.inflations,
+				control = control)
+	}
 	
-	return(result)
+	else stop("Invalid initialization values. See examples.")
 	
+	
+	return(result)	
 }
-## Testing:
-# Create data: 
+##### Testing with simulated data #### 
 #require(chords)
 #Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
 #theta<- 1
 #beta<- 2.5e-8
 #tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
-#plot(degree.sampled.vec, type='h', main='Sample')
-# Veryfying likelihood computation:
+#x11(); plot(degree.sampled.vec, type='h', main='Sample')
+#
+## Veryfying likelihood computation:
 #estimate.rds(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 				
-#				initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
-#				control = generate.rds.control( maxit = 10, method="Nelder-Mead"))		
+#		initial.values = list(theta=c(theta), beta=c(beta), Njs=list(Njs)),  
+#		control = generate.rds.control( maxit = 1, method="BFGS"))
 #
 ##### Grid over (theta,beta,Njs) from true parameter values:
-#grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3), beta=seq(beta*0.5, beta*1.5, length=3), Njs=list(list(Njs*0.5), list(Njs), list(Njs*1.5) ))
+#thetas<- theta * c(0.9,1,1.1)
+#betas<- beta *c(0.9,1,1.1)
+#theta.beta.grid<- makeBetaGrid(degree.sampled.vec, thetas, betas, beta.deflations)
+#grid.values<- makeNjGrid(degree.sampled.vec, theta.beta.grid, Nj.infaltions)		
+#
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
-#		grid.values = grid.values,  
-#		control = generate.rds.control( maxit = 1, method="Nelder-Mead"))
+#		grid.values = grid.values, control = generate.rds.control(maxit=20, method="Nelder-Mead"))
+#
 ###### Grid over (theta,beta) from true parameter values:
-#grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3), beta=seq(beta*0.5, beta*1.5, length=3))
+#beta.deflations<- c(1)
+#thetas<- theta * c(0.9,1,1.1)
+#betas<- beta *c(0.9,1,1.1)
+#grid.values<- makeBetaGrid(degree.sampled.vec, thetas, betas, beta.deflations)
+#
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
-#		grid.values = grid.values,  
-#		control = generate.rds.control( maxit = 1, method="Nelder-Mead"))
+#		grid.values = grid.values, control = generate.rds.control(maxit=20, method="Nelder-Mead"))
+#
+#
 #### Grid over (theta) from true parameter values:
-#grid.values<- list(theta=seq(theta-0.5, theta+0.5, length=3))
+#grid.values<- theta * c(0.9,1,1.1)
+#
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
 #		grid.values = grid.values,  
 #		control = generate.rds.control( maxit = 10, method="Nelder-Mead"))
-##### Testing with true data:
+#
+#### Grid with no starting parameters:
+#estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), control = generate.rds.control( maxit = 2, method="Nelder-Mead"))
+
+
+
+
+#### Testing with true data ####
+#require(chords)
 #data(simulation, package='chords')
 #temp.data<- unlist(data3[1,7000:7500])
-## Initialize only with thetas:
-#grid.values<- list(theta=seq(-1,1,by=0.2), beta=c(seq(1e-14, 1e-9, length=5)))
-#(rds.result.grid<- estimate.rds.grid(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), grid.values=grid.values), control = generate.rds.control( maxit = 1, method="Nelder-Mead"))
-#str(rds.result)
-#plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
+## Use Simon's (theta,beta) grid with no Nj inflation:
+#estimate.rds.grid(temp.data, Sij = ?!?!!)
 
 
 

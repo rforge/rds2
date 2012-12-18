@@ -12,7 +12,7 @@
      
     var.theta(sampled.degree.vector, Sij, Njs, theta, beta)
     
-    generate.rds.control(maxit=2000, method="BFGS")
+    generate.rds.control(maxit=2000, method="Nelder-Mead")
     
     estimate.rds.two.stage(sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
     
@@ -40,6 +40,10 @@
   \item{beta}{ Numeric value of \eqn{\beta} }
   
   \item{maxit}{Used by \code{generate.rds.control} to control the behavious of \code{\link{optim}}.}
+  
+  \item{Nj.inflations}{A numeric vector of inflation factors for each starting \eqn{\N[j]} vector.}
+  
+  \item{beta.inflations}{A numeric vector of deflation factors for each starting \eqn{\beta}.}
   
   \item{all.solutions}{Should all local maxima be returned or just one.} 
   
@@ -75,16 +79,22 @@ Each components includes:
 
 
 \details{
-\code{estimate.rds} and \code{estimate.rds.grid} performs maximum likelihood estimation of the population
+	\code{estimate.rds} and \code{estimate.rds.grid} performs maximum likelihood estimation of the population
   size, degree distribution and "coefficient of discoverability" as described in the reference.   
-  The method assumes the probability of sampling an individual with degree i at time j is given by: 
+  
+   The method assumes the probability of sampling an individual with degree i at time j is given by: 
   \deqn{\beta I[j] (N[i]-S[i,j]) i^\theta }
   where   \eqn{\beta} is the base rate of sampling, \eqn{\theta} is the "coefficient of discoverability", \eqn{I[j]} it the number of individuals sampled up to time \eqn{j}, 
    \eqn{N[i]} is the number of individuals with degree \eqn{i} in the population, and \eqn{S[i,j]} is the number of individuals with degree \eqn{i} sampled up to time \eqn{j}.
+   
    The function \code{estimate.rds} has to be given some initialization values. By default, it is given a grid of \eqn{\theta} values, but it can also be given a list including other parameter values (as in the example).
-   \code{estimate.rds.two.stage} works like \code{estimate.rds} but does not assume \eqn{\beta[j]=\beta * j^ \theta }, so tries to estimate \eqn{\beta[j]} directly. 
-   It does so in two stages: in the first it calls \code{estimate.rds}, and once the optimal values have been found, it relaxes the \eqn{\beta[j]=\beta * j^ \theta } assumptions and optimizes for \eqn{\beta_j)}
-   The function \code{estimate.rds.grid} does a grid search over all combinations of given parameter values. It is currently the recommended alternative for small and intermediate sample sizes as \code{estimate.rds} tends to converge to local maxima. For large samples, \code{estimate.rds} is a faster and reliable alternative.  
+   
+   The function \code{estimate.rds.grid} has a flexible mechanism for creating initialization points so typically it would be used to to do a grid search with very few optimizing iterations at each starting value.
+   It can be called with a list of all starting values (see examples for the structure of the input), with \eqn{\beta} and \eqn{\theta}, with \eqn{\theta} or with no starting values at all. In each case it will complete the needed grid using a built-in heuristic.
+   It is intended to deal with local maxima, which are typical in this type of problem. Sadly, it will take much longer to run than  \code{estimate.rds}.  
+      
+   \code{estimate.rds.two.stage} works like \code{estimate.rds} but does not assume \eqn{\beta[j]=\beta * j^ \theta }, so tries to estimate \eqn{\beta[j]} directly.  
+   It does so in two stages: in the first it calls \code{estimate.rds}, and once the optimal values have been found, it relaxes the \eqn{\beta[j]=\beta * j^ \theta } assumptions and optimizes for \eqn{\beta_j)}     
    }
    
    
