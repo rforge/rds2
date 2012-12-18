@@ -14,12 +14,12 @@ makeNjGrid(sampled.degree.vector, theta.beta.grid, Nj.inflations)
 \arguments{
   \item{sampled.degree.vector}{A numeric vector of the sampled degrees.}
   
-  \item{theta.beta.grid}{The output of \code{\link{mekaBetaGrid}}}
+  \item{theta.beta.grid}{The output of \code{\link{makeBetaGrid}}}
 
   \item{Nj.inflations}{A numeric vector of inflation factors for each starting \eqn{\N[j]} vector.}
 }
 \value{
-	Returns a list of starting values for \code{\link{estimates.rds.grid}}.
+	Returns a list of starting values for \code{\link{estimate.rds.grid}}.
 	}
 
 \author{Jonathan D. Rosenblatt <john.ros.work@gmail.com>}

@@ -20,7 +20,7 @@ makeBetaGrid(sampled.degree.vector, thetas, betas, beta.inflations)
   \item{beta.inflations}{A numeric vector of deflation factors for each starting \eqn{\beta}.}
 }
 \value{
-	Returns a list of starting values for \code{\link{estimates.rds.grid}}.
+	Returns a list of starting values for \code{\link{estimate.rds.grid}}.
 }
 \author{
 Jonathan D. Rosenblatt <john.ros.work@gmail.com>

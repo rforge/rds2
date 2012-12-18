@@ -12,11 +12,11 @@
      
     var.theta(sampled.degree.vector, Sij, Njs, theta, beta)
     
-    generate.rds.control(maxit=2000, method="Nelder-Mead")
+    generate.rds.control(maxit=2000, method="Nelder-Mead",Nj.inflations=c(1,2,10), beta.inflations= exp(-seq(2,0, by=-0.02)) )
     
     estimate.rds.two.stage(sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE)
     
-    estimate.rds.grid(sampled.degree.vector, Sij , grid.values , control=generate.rds.control(maxit = 10))
+    estimate.rds.grid(sampled.degree.vector, Sij , grid.values , control=generate.rds.control(maxit = 10, method = "Nelder-Mead"))
 }
 
 
