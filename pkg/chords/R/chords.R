@@ -149,8 +149,10 @@ generate.rds.control<- function(
 		maxit=500, 
 		method="Nelder-Mead",
 		Nj.inflations=c(1,2,10),
-		beta.inflations= exp(-seq(2,0, by=-0.02))){
-	return(list(maxit=maxit, method=method, Nj.inflations=Nj.inflations, beta.inflations=beta.inflations))
+		beta.inflations= exp(-seq(2,0, by=-0.02)),
+		fnscale=1000,
+		){
+	return(list(maxit=maxit, method=method, Nj.inflations=Nj.inflations, beta.inflations=beta.inflations, fnscale=fnscale))
 }
 ## Testing:
 #generate.rds.control()
@@ -191,8 +193,9 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 	Observed.js<- as.numeric(names(Observed.Njs))
 	maximal.degree.count<- max(Observed.Njs)
 	the.call<- sys.call()
-	method=control$method
-	maxit<- control$maxit
+	method <- control$method
+	maxit <- control$maxit
+	fnscale <- control$fnscale
 	
 	
 	# Compute the size of the snowball along the sample:
@@ -249,10 +252,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 			beta<- 1/ (sum(sampled.degree.vector) * maximal.degree.count * max.observed.degree^theta )
 			return(transform.beta(beta))
 		}
-		
-		
-		
-			
+					
 		# initiate with only theta given:
 		if(length(initial.values)==1L){
 			stopifnot(is.numeric(initial.values$theta))			
@@ -265,9 +265,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 			}
 			returned.initial.values<- lapply(initial.values$theta, wrap.initial.values)	
 		}
-		
-		
-		
+				
 		# initiate with all parameter given:
 		else if(length(initial.values)==3L){
 			stopifnot(all(is.numeric(initial.values$theta), is.numeric(initial.values$beta), sapply(initial.values$Njs, is.numeric)))
@@ -280,8 +278,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 			}
 			returned.initial.values<- mapply(wrap.initial.values, beta= initial.values$beta, theta=initial.values$theta, Njs=initial.values$Njs, SIMPLIFY=FALSE )
 		}
-		
-		
+				
 		# initiate with theta and beta given:
 		else if(length(initial.values)==2L){
 			stopifnot(all(is.numeric(initial.values$theta), is.numeric(initial.values$beta)))
@@ -314,22 +311,19 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 	}
 		
 	
-	
-	
-	
-	
-	
+		
 	## Initialize estimation:	 	
 	initial.values.list<- generate.initial.values(initial.values)				
 		
-	# In case of convergence problems, try different optimization methods. In particular: "Nelder-Mead", "SANN", 
-	optim.wrap<- function(x) try(optim(par=x, fn=likelihood.wrap, method=method , control=list(fnscale=-1, maxit=maxit)))
+	# In case of convergence problems, try different optimization methods. In particular: "Nelder-Mead", "SANN",
+	optim.wrap<- function(x) try(optim(par=x, fn=likelihood.wrap, method=method , control=list(fnscale=-1, maxit=maxit, fnscale=fnscale)))
 	
 	likelihood.optim<-lapply(initial.values.list,  optim.wrap )
 	
 	
 	prepare.result<- function(x){
-		result<- simpleError("Optim did not converge") 
+		result<- simpleError("Optim did not converge")
+		
 		if(length(x)==5L){
 			observed.js.indexes<- sapply(Observed.js, function(y) grep(paste("logNjs.",y,"$",sep=""), names(x$par)))
 			N.j[Observed.js]<- exp(x$par[observed.js.indexes]) # fill non trivial Nj estimates.		
@@ -365,15 +359,19 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 }
 
 ##### Testing: 
+#require(chords)
 #data(simulation, package='chords')
 #temp.data<- unlist(data3[1,7000:7500])
 ## Initialize only with thetas:
-#(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), method="BFGS", initial.values=list(theta=c(1,2,10)), 
-#					control=generate.rds.control()))
+#(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), initial.values=list(theta=c(1,2,10)), 
+#					control=generate.rds.control(maxit=4, method="BFGS")))
 #str(rds.result)
 #plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 #var.theta(temp.data, Sij = make.Sij(temp.data), Njs=rds.result$Nj, theta=rds.result$theta, 
 #		beta=rds.result$c)
+
+
+
 
 			 
 
@@ -499,7 +497,6 @@ makeNjGrid<- function(sampled.degree.vector, theta.beta.grid, Nj.inflations){
 ## Grid search given all three parameters:
 grid.all.parameters<- function(sampled.degree.vector, Sij, grid.values, control){
 	# Initializing:
-	method <- control$method
 	
 	temp.estimate.rds<- function(parameters) {
 		result<-try(estimate.rds(
@@ -626,7 +623,6 @@ grid.one.parameters <- function(sampled.degree.vector, Sij, thetas, beta.inflati
 
 
 
-## FIXME: estimate.rds.grid
 
 # Optimize using grid search:
 estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values,		
@@ -638,7 +634,6 @@ estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values,
 	beta.inflations<- control$beta.inflations
 	
 	## Initiate using no values: 
-	## TODO: generateThetaGrid()
 	if (missing(grid.values)) {
 		grid.values<- seq(-1,1, by=0.1)		
 		result<- grid.one.parameters(sampled.degree.vector, Sij = Sij, 
@@ -646,7 +641,6 @@ estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values,
 				beta.inflations= beta.inflations,
 				control = control)
 	}
-	
 	
 	
 	## Grid of theta, beta and Njs:
@@ -694,11 +688,11 @@ estimate.rds.grid<- function(sampled.degree.vector, Sij, grid.values,
 ##### Grid over (theta,beta,Njs) from true parameter values:
 #thetas<- theta * c(0.9,1,1.1)
 #betas<- beta *c(0.9,1,1.1)
-#theta.beta.grid<- makeBetaGrid(degree.sampled.vec, thetas, betas, beta.deflations)
-#grid.values<- makeNjGrid(degree.sampled.vec, theta.beta.grid, Nj.infaltions)		
+#theta.beta.grid<- makeBetaGrid(degree.sampled.vec, thetas, betas, 1)
+#grid.values<- makeNjGrid(degree.sampled.vec, theta.beta.grid, 1)		
 #
 #estimate.rds.grid(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec),				
-#		grid.values = grid.values, control = generate.rds.control(maxit=20, method="Nelder-Mead"))
+#		grid.values = grid.values, control = generate.rds.control(maxit=200, method="BFGS"))
 #
 ###### Grid over (theta,beta) from true parameter values:
 #beta.deflations<- c(1)
