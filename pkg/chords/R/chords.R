@@ -68,6 +68,27 @@ inv.qnorm.theta<- function(qnorm.theta, ...){
 
 
 
+# Transforms beta back and forth to canonical (real) scale:
+generate.beta.scale<- function(scale=10e10) return(scale)
+
+
+transform.beta <- function(beta, scale=generate.beta.scale()){
+	canonical.beta<- log(beta*scale)
+	return(canonical.beta)
+}
+
+
+
+
+inv.transform.beta<- function(canonical.beta, scale=generate.beta.scale()){
+	beta<- exp(canonical.beta)/scale
+	return(beta)
+}
+
+
+
+
+
 #' Maps the theta parameter to the real line.
 #' @param theta 
 #' @param const Controls the 
@@ -125,7 +146,7 @@ compute.S<- function(Sij){
 
 
 generate.rds.control<- function(
-		maxit=2000, 
+		maxit=500, 
 		method="Nelder-Mead",
 		Nj.inflations=c(1,2,10),
 		beta.inflations= exp(-seq(2,0, by=-0.02))){
@@ -171,6 +192,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 	maximal.degree.count<- max(Observed.Njs)
 	the.call<- sys.call()
 	method=control$method
+	maxit<- control$maxit
 	
 	
 	# Compute the size of the snowball along the sample:
@@ -182,7 +204,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 		# Initialize:
 		likelihood.result<- -9999999 
 			
-		beta<- exp(par[['canonical.beta']]) # assumes beta is non negative and given in log scale
+		beta<- inv.transform.beta(par[['canonical.beta']]) # assumes beta is non negative and given in log scale
 		theta<- do.call(inv.qnorm.theta, c(qnorm.theta=par[['canonical.theta']], control))		
 		N.j<- rep(0, max.observed.degree)
 		## Does this sbsetting work when initial values are not specified? 
@@ -225,7 +247,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 		# compute maximal beta given other parameter values:
 		initial.log.beta.function<- function(theta) {
 			beta<- 1/ (sum(sampled.degree.vector) * maximal.degree.count * max.observed.degree^theta )
-			return(log(beta) - 0.01)
+			return(transform.beta(beta))
 		}
 		
 		
@@ -251,7 +273,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 			stopifnot(all(is.numeric(initial.values$theta), is.numeric(initial.values$beta), sapply(initial.values$Njs, is.numeric)))
 			wrap.initial.values<- function(beta, theta, Njs){
 				c(
-						canonical.beta=log(beta) ,
+						canonical.beta=transform.beta(beta) ,
 						canonical.theta=do.call(qnorm.theta, c(theta=theta, control)) ,
 						logNjs=log(Njs)
 				)
@@ -265,14 +287,14 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 			stopifnot(all(is.numeric(initial.values$theta), is.numeric(initial.values$beta)))
 			wrap.initial.values<- function(beta, theta){				
 				output<- c(
-						canonical.beta=log(beta) ,
+						canonical.beta=transform.beta(beta) ,
 						canonical.theta=qnorm.theta(theta) ,
 						logNjs=log(Observed.Njs)+0.1
 				)				
 				log.beta.limit<- initial.log.beta.function(theta)
 				
-				if(beta > exp(log.beta.limit)){
-					message(paste('Initial beta too large. Forcing beta=',signif(exp(log.beta.limit),4), " instead of beta=",signif(beta,4), sep=""))
+				if(beta > inv.transform.beta(log.beta.limit)){
+					message(paste('Initial beta too large. Forcing beta=',signif(inv.transform.beta(log.beta.limit),4), " instead of beta=",signif(beta,4), sep=""))
 					output[['canonical.beta']]<- log.beta.limit
 				}				
 				return(output)
@@ -301,7 +323,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 	initial.values.list<- generate.initial.values(initial.values)				
 		
 	# In case of convergence problems, try different optimization methods. In particular: "Nelder-Mead", "SANN", 
-	optim.wrap<- function(x) try(optim(par=x, fn=likelihood.wrap, method=method , control=list(fnscale=-1, maxit=control$maxit)))
+	optim.wrap<- function(x) try(optim(par=x, fn=likelihood.wrap, method=method , control=list(fnscale=-1, maxit=maxit)))
 	
 	likelihood.optim<-lapply(initial.values.list,  optim.wrap )
 	
@@ -313,7 +335,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 			N.j[Observed.js]<- exp(x$par[observed.js.indexes]) # fill non trivial Nj estimates.		
 			
 			result<- list( 
-					beta=exp(x$par[['canonical.beta']]), 
+					beta=inv.transform.beta(x$par[['canonical.beta']]), 
 					theta=do.call(inv.qnorm.theta, c(qnorm.theta=x$par[['canonical.theta']], control)),
 					initial.values=initial.values,
 					Nj=N.j,
