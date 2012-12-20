@@ -179,15 +179,17 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 		likelihood.result<- -9999999 
 			
 		beta<- inv.transform.beta(par[['canonical.beta']]) # assumes beta is non negative and given in log scale
-		theta<- do.call(inv.transform.theta, c(qnorm.theta=par[['canonical.theta']], control))		
+		theta<- inv.transform.theta(canonical.theta = par[['canonical.theta']], control)		
 		N.j<- rep(0, max.observed.degree)
 		 
+		# Get the indexes in par of the Njs.
 		observed.js.indexes<- 	sapply(Observed.js, function(x) grep(paste("canonical.Nj.",x,"$",sep=""), names(par) )   )
 		N.j[Observed.js]<- exp(par[observed.js.indexes]) # fill non trivial Nj estimates.
 		
 		# Checking estimates are within allowed range:
 		bad.Nj<- any( round(N.j[Observed.js],10) < round(Observed.Njs,10) ) # Estimated Nj smaller than observed
-		bad.beta<- beta >= (1 / ( sum(N.j) * max(N.j) * max.observed.degree^theta )) # Defined beta values
+		Njs<- 
+		bad.beta<- beta >= LogBetaBound()  # Defined beta values
 		if(isTRUE( bad.Nj || bad.beta)) return(likelihood.result) 
 		
 		# Compute likelihood:
@@ -411,11 +413,14 @@ createDegreeCount <- function(network.size, network.density) {
 
 
 # Creates loose bound on maximal (log) beta values given theta and data:
-initialLogBetas <- function(sampled.degree.vector, theta) {
-	max.observed.degree<- max(sampled.degree.vector)
-	maximal.degree.count<- max(table(sampled.degree.vector))
-	beta<- 1/ (sum(sampled.degree.vector) * maximal.degree.count * max.observed.degree^theta )
-	return(log(beta)+log(0.9))
+LogBetaBound <- function(Njs, theta, scale) {
+	# Njs assumed to be a table with degree (j) and counts (Njs)
+	Js<- as.numeric(names(Njs))
+	max.observed.degree<- max(Js)
+	maximal.degree.count<- max(Njs)
+	pop.size<- Njs %*% Js
+	beta<- 1/ (pop.size * maximal.degree.count * max.observed.degree^theta )
+	return(transform.beta(beta, scale))
 }
 ## Testing:
 #initialLogBetas(sampled.degree.vector = rpois(200,2), theta = 1)
@@ -577,7 +582,7 @@ grid.two.parameters<- function(sampled.degree.vector, Sij, grid.values, Nj.infal
 grid.one.parameters <- function(sampled.degree.vector, Sij, thetas, beta.inflations=c(1), Nj.inflations, 
 		control){
 	betas<- c()
-	for(theta in thetas) betas<- c(betas, exp(initialLogBetas(sampled.degree.vector, theta)))
+	for(theta in thetas) betas<- c(betas, exp(LogBetaBound(sampled.degree.vector, theta)))
 	
 	theta.beta.values<- makeBetaGrid(sampled.degree.vector, thetas, betas, beta.inflations)
 	
