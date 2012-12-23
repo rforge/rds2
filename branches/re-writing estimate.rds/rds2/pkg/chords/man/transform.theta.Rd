@@ -1,11 +1,11 @@
-\name{qnorm.theta}
-\alias{qnorm.theta}
-\alias{inv.qnorm.theta}
+\name{transform.theta}
+\alias{transform.theta}
+\alias{inv.transform.theta}
 \title{ Maps \eqn{\theta} to the real line and vise versa.}
 \usage{
-  qnorm.theta(theta, ... )
+  transform.theta(theta, ... )
     
-   inv.qnorm.theta(qnorm.theta, ...)
+   inv.transform.theta(qnorm.theta, ...)
 }
 \arguments{
   \item{theta}{\eqn{\theta } in its original scale}

@@ -419,18 +419,21 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 }
 
 ##### Testing: 
-require(chords)
-data(simulation, package='chords')
-temp.data<- unlist(data3[1,7000:7500])
-# Initialize only with thetas:
-initial.values<- list(list(theta=-1),list(theta=1))
-## TODO: A)fix estimate.rds
-(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), 
-					initial.values=initial.values, 
-					control=generate.rds.control(maxit=4, method="BFGS", beta.inflations = 1, Nj.inflations = 1)))
-
-
-plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
+#require(chords)
+#data(simulation, package='chords')
+#temp.data<- unlist(data3[1,7000:7500])
+## Initialize only with thetas:
+#initial.values<- list(list(theta=-1),list(theta=1))
+### TODO: A)fix estimate.rds
+#(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), 
+#					initial.values=initial.values, 
+#					control=generate.rds.control(maxit=2000, 
+#							method="Nelder-Mead", 
+#							beta.inflations = exp(-seq(2,0, by=-0.02)), 
+#							Nj.inflations = 1, 
+#							beta.scale = 1, 
+#							fnscale = -10)))
+#plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
 
 
 
