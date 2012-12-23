@@ -52,12 +52,12 @@ make.Sij<- function(data){
 
 
 inv.transform.theta<- function(canonical.theta, ...){
-	canonical.theta
+	c(canonical.theta, use.names=FALSE)
 }
 
 
 transform.theta<- function(theta, ...){
-	theta
+	c(theta, use.names=FALSE)
 }
 
 
@@ -68,12 +68,12 @@ generate.beta.scale<- function(scale=10e10) return(scale)
 
 transform.beta <- function(beta, scale=generate.beta.scale()){
 	canonical.beta<- log(beta*scale)
-	return(canonical.beta)
+	return(c(canonical.beta, use.names=FALSE))
 }
 
 inv.transform.beta<- function(canonical.beta, scale=generate.beta.scale()){
 	beta<- exp(canonical.beta)/scale
-	return(beta)
+	return(c(beta, use.names=FALSE))
 }
 
 
@@ -142,7 +142,7 @@ generate.rds.control<- function(
 		method="Nelder-Mead",
 		Nj.inflations=c(1,2,10),
 		beta.inflations= exp(-seq(2,0, by=-0.02)),
-		fnscale=1000,
+		fnscale=-1000,
 		beta.scale=10e5
 		){
 	return(list(maxit=maxit, method=method, Nj.inflations=Nj.inflations, beta.inflations=beta.inflations, fnscale=fnscale, beta.scale=beta.scale))
@@ -165,6 +165,45 @@ makeBetas<- function(theta, Nj, Js, beta.inflations){
 }
 ## Testing:
 #makeBetas(1,c(100,100,100), c(10,50,100), c(1,1e4,1e8))
+
+
+
+
+
+
+
+
+
+
+
+makeNjs <- function(sampled.degree.vector, Nj.inflations){
+	# Empirical counts
+	Observed.Njs <- table(sampled.degree.vector)[-1] # table of degree counts withuot zero
+	Observed.js <- as.numeric(names(Observed.Njs))
+	
+	# Inflate empirical counts (arbitrary)
+	result<- list()
+	for (inflation in Nj.inflations){
+		Njs<-  ceiling(Observed.Njs*inflation)
+		names(Njs)<- Observed.js
+		Njs.list<- list(Njs)
+		result<- c(result, Nj=Njs.list)
+	}	
+	# Return list of options:
+	return(result)
+}
+## Testing:
+#Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
+#theta<- 1
+#beta<- 2e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
+#makeNjs(degree.sampled.vec, c(1,1.5))
+
+
+
+
+
+
 
 
 
@@ -243,7 +282,7 @@ makeCanonicalInitialization <- function(initial.values, sampled.degree.vector, N
 #theta<- 1
 #beta<- 2e-8
 #tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
-makeCanonicalInitialization(list(list(thetha=10), list(theta=20)), degree.sampled.vec, c(1,2,3), c(1,2), 1)[[2]]
+#makeCanonicalInitialization(list(list(thetha=10), list(theta=20)), degree.sampled.vec, c(1,2,3), c(1,2), 1)[[2]]
 	
 
 
@@ -251,36 +290,14 @@ makeCanonicalInitialization(list(list(thetha=10), list(theta=20)), degree.sample
 
 
 
-# 
-makeNjs <- function(sampled.degree.vector, Nj.inflations){
-	# Empirical counts
-	Observed.Njs <- table(sampled.degree.vector)[-1] # table of degree counts withuot zero
-	Observed.js <- as.numeric(names(Observed.Njs))
-	
-	# Inflate empirical counts (arbitrary)
-	result<- list()
-	for (inflation in Nj.inflations){
-		Njs<-  ceiling(Observed.Njs*inflation)
-		names(Njs)<- Observed.js
-		Njs.list<- list(Njs)
-		result<- c(result, Nj=Njs.list)
-	}	
-	# Return list of options:
-	return(result)
-}
-## Testing:
-#Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
-#theta<- 1
-#beta<- 2e-8
-#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
-#makeNjs(degree.sampled.vec, c(1,1.5))
+ 
 
 
 
 
 
 
-estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(),...) {  	
+estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE) {  	
   	# Initializing:
 	the.call<- sys.call()
 	method <- control$method
@@ -307,8 +324,8 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 	# Implements constraints on parameters by taking real valued (canonical) parameters and remapping them.
 	likelihood.wrap<- function(par){
 		# Initialize:
-		likelihood.result<- -9999999 
-			
+		likelihood.result<- -9999999
+		
 		beta<- inv.transform.beta(par[['canonical.beta']]) # assumes beta is non negative and given in log scale
 		theta<- inv.transform.theta(canonical.theta = par[['canonical.theta']], control)
 		
@@ -320,7 +337,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 		
 		# Checking estimates are within allowed range:
 		bad.Nj<- any( round(N.j[Observed.js],10) < round(Observed.Njs,10) ) # Estimated Nj smaller than observed
-		bad.beta<- beta >= BetaBound(JS= Observed.js, Njs=N.j[Observed.js], theta=theta)  # Defined beta values
+		bad.beta<- beta >= BetaBound(Js= Observed.js, Nj=N.j[Observed.js], theta=theta)  # Defined beta values
 		if(isTRUE( bad.Nj || bad.beta)) return(likelihood.result) 
 		
 		# Compute likelihood:
@@ -356,21 +373,24 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 	initial.value.list <- makeCanonicalInitialization(initial.values = initial.values, sampled.degree.vector = sampled.degree.vector, Nj.inflations = Nj.inflations, beta.inflations = beta.inflations, scale = beta.scale)
 		
 	# In case of convergence problems, try different optimization methods. In particular: "Nelder-Mead", "SANN",
-	optim.wrap<- function(x) try(optim(par=x, fn=likelihood.wrap, method=method , control=list(fnscale=fnscale, maxit=maxit,...)))
+	optim.wrap<- function(x) {
+		try(optim(par=unlist(x), fn=likelihood.wrap, method=method , control=list(fnscale=fnscale, maxit=maxit)))
+	}
 
 	likelihood.optim<-lapply(initial.value.list,  optim.wrap )
 	
-	
+
+	# Convert output from canonical form to original form:
 	prepare.result<- function(x){
 		result<- simpleError("Optim did not converge")
 		
 		if(length(x)==5L){
-			observed.js.indexes<- sapply(Observed.js, function(y) grep(paste("logNjs.",y,"$",sep=""), names(x$par)))
+			observed.js.indexes<- unlist(lapply(Observed.js, function(y) grep(paste("canonical.Nj.",y,"$",sep=""), names(x$par))))
 			N.j[Observed.js]<- exp(x$par[observed.js.indexes]) # fill non trivial Nj estimates.		
 			
 			result<- list( 
 					beta=inv.transform.beta(x$par[['canonical.beta']]), 
-					theta=do.call(inv.transform.theta, c(qnorm.theta=x$par[['canonical.theta']], control)),
+					theta=inv.transform.theta(x$par[['canonical.theta']], control),
 					initial.values=initial.values,
 					Nj=N.j,
 					iterations=x$counts,
@@ -392,7 +412,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 		} 
 	}
 	else{
-		message('Estimation did not converge. Try differet intialization values or optimization method.')
+		stop('Estimation did not converge. Try differet intialization values or optimization method.')
 	}
 	
 	return(final.result)							
@@ -407,7 +427,7 @@ initial.values<- list(list(theta=-1),list(theta=1))
 ## TODO: A)fix estimate.rds
 (rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), 
 					initial.values=initial.values, 
-					control=generate.rds.control(maxit=4, method="BFGS")))
+					control=generate.rds.control(maxit=4, method="BFGS", beta.inflations = 1, Nj.inflations = 1)))
 
 
 plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
