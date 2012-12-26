@@ -93,6 +93,8 @@ inv.transform.Nj<- function(canonical.Nj, scale=generate.Nj.scale()){
 	Nj<- exp(canonical.Nj)/scale
 	return(Nj)
 }
+## Testing:
+#inv.transform.Nj(transform.Nj(100))
 
 
 
@@ -192,7 +194,7 @@ makeNjs <- function(sampled.degree.vector, Nj.inflations){
 	# Return list of options:
 	return(result)
 }
-## Testing:
+### Testing:
 #Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
 #theta<- 1
 #beta<- 2e-8
@@ -219,7 +221,7 @@ makeCanonicalInitialization <- function(initial.values, sampled.degree.vector, N
 		stopifnot(max(sapply(initial.values, length))==min(sapply(initial.values, length)))
 		Njs<- makeNjs(sampled.degree.vector, Nj.inflations)		
 		# for each theta, compute a grid of betas and Njs					
-		for(i in length(initial.values)){
+		for(i in 1:length(initial.values)){
 			theta<- initial.values[[i]]$theta										
 			for(Nj in Njs){
 				betas<- makeBetas(theta=theta, Nj=Nj, Js=as.numeric(names(Nj)), beta.inflations=beta.inflations)
@@ -242,7 +244,7 @@ makeCanonicalInitialization <- function(initial.values, sampled.degree.vector, N
 		Njs<- makeNjs(sampled.degree.vector, Nj.inflations)	
 		
 		# for each theta and beta, compute a grid of betas and Njs				
-		for(i in length(initial.values)){
+		for(i in 1:length(initial.values)){
 			theta<- initial.values[[i]]$theta
 			beta<- initial.values[[i]]$beta
 			for(Nj in Njs){					
@@ -251,7 +253,7 @@ makeCanonicalInitialization <- function(initial.values, sampled.degree.vector, N
 						canonical.theta=transform.theta(theta), 
 						canonical.beta=transform.beta(beta, scale), 
 						canonical.Nj=transform.Nj(Nj))					
-				result<- c(result, theta.beta.Nj)				
+				result<- c(result, list(theta.beta.Nj))						
 			}			
 		}			
 	}
@@ -260,7 +262,7 @@ makeCanonicalInitialization <- function(initial.values, sampled.degree.vector, N
 	else if(length(initial.values[[1]])==3L){
 		stopifnot(max(sapply(initial.values, length))==min(sapply(initial.values, length)))
 		# for each theta and beta, compute a grid of betas and Njs				
-		for(i in length(initial.values)){
+		for(i in 1:length(initial.values)){
 			theta<- initial.values[[i]]$theta
 			beta<- initial.values[[i]]$beta
 			Nj<- initial.values[[i]]$Njs				
@@ -269,7 +271,7 @@ makeCanonicalInitialization <- function(initial.values, sampled.degree.vector, N
 					canonical.theta=transform.theta(theta), 
 					canonical.beta=transform.beta(beta, scale), 
 					canonical.Nj=transform.Nj(Nj))					
-			result<- c(result, theta.beta.Nj)			
+			result<- c(result, list(theta.beta.Nj))						
 		}			
 	}
 	
@@ -277,12 +279,18 @@ makeCanonicalInitialization <- function(initial.values, sampled.degree.vector, N
 	
 	return(result)
 }
-## Testing:
+### Testing:
 #Njs<- c(100,100,100,100); names(Njs)<- c("1","50","100","1000"); Njs<- as.table(Njs)
 #theta<- 1
 #beta<- 2e-8
 #tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
-#makeCanonicalInitialization(list(list(thetha=10), list(theta=20)), degree.sampled.vec, c(1,2,3), c(1,2), 1)[[2]]
+#makeCanonicalInitialization(list(list(theta=10), list(theta=20)), degree.sampled.vec, c(1,2,3), c(1,2), 1)[[2]]
+#
+#makeCanonicalInitialization(list(list(theta=10)), degree.sampled.vec, 1, 1, 1e15)[[1]]
+#makeCanonicalInitialization(list(list(theta=10, beta=2)), degree.sampled.vec, c(1,2,3), c(1,2), 1)[[1]]
+#Njs<-rpois(20,10)
+#names(Njs)<- seq(along.with=Njs)
+#makeCanonicalInitialization(list(list(theta=10, beta=2, Njs=Njs)), degree.sampled.vec, c(1,2,3), c(1,2), 1)[[1]]
 	
 
 
@@ -370,7 +378,12 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 	# Fills and formats initialization values as required by optim.wrap()
 	# Assumes initial.values is a list of lists. Each containing a theta, beta and an Nj vector.	
 
-	initial.value.list <- makeCanonicalInitialization(initial.values = initial.values, sampled.degree.vector = sampled.degree.vector, Nj.inflations = Nj.inflations, beta.inflations = beta.inflations, scale = beta.scale)
+	initial.value.list <- makeCanonicalInitialization(
+			initial.values = initial.values, 
+			sampled.degree.vector = sampled.degree.vector, 
+			Nj.inflations = Nj.inflations, 
+			beta.inflations = beta.inflations, 
+			scale = beta.scale)
 		
 	# In case of convergence problems, try different optimization methods. In particular: "Nelder-Mead", "SANN",
 	optim.wrap<- function(x) {
@@ -433,7 +446,42 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, 
 #							Nj.inflations = 1, 
 #							beta.scale = 1, 
 #							fnscale = -10)))
-#plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')	
+#plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')
+#
+#
+#### Testing with Previous results:
+## TODO: A) Why is the likelihoor wrong?!? (probably in the wrapping functions)
+load(file="/Users/jonathanrosenblatt/Dropbox/Yakir/White/testingVer0.69.RData")
+.C("likelihood", 
+		sample=as.integer(data.degree), 
+		Sij=as.integer(as.matrix(data.Sjt)),
+		S=as.integer(compute.S(data.Sjt)),				  
+		beta=as.numeric(initial.values[[1]]$beta), 
+		theta=as.numeric(initial.values[[1]]$theta), 
+		Nj=as.numeric(initial.values[[1]]$Njs), 
+		observed_degrees=as.integer(rownames(data.Sjt)),
+		n=as.integer(length(data.degree)), 
+		N=as.integer(length(initial.values[[1]]$Njs)),
+		N_observed=as.integer(nrow(data.Sjt)),				  
+		arc=FALSE,
+		result=as.double(0))
+
+
+
+
+
+names(initial.values[[1]])[3]<-"Njs" 
+estimation4<- estimate.rds(sampled.degree.vector=data.degree, 
+		Sij = data.Sjt, 
+		initial.values=initial.values, 
+		control = generate.rds.control(
+				maxit=0, 
+				method="BFGS", 
+				beta.inflations = 1, 
+				Nj.inflations = 1, 
+				beta.scale = 1, 
+				fnscale = -1                                 
+		))
 
 
 
