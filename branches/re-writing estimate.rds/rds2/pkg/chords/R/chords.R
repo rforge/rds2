@@ -359,7 +359,7 @@ generate.sample <- function(theta, Njs, beta, sample.length, double.sampling.war
 	if(beta > maximal.beta) message(error.messge) # Note: larger beta favour sampling non 0 degrees.
 	stopifnot(min(js)>0)
 	
-	
+
 	
 	# Preparing to sample:
 	Uik<- rep(0L, length.out=max(js))
@@ -367,7 +367,7 @@ generate.sample <- function(theta, Njs, beta, sample.length, double.sampling.war
 	snowball<- 1L
 	degree.sampled.vec<- rep(NA, sample.length)
 	# Start sampling:
-	for(i in seq(1, sample.length)){	 
+	for(i in seq(1, sample.length)){	
 		pi.function<- function(k) beta * k^theta * snowball * (Njs[paste(k)] - Uik[k] )
 		n.pi.function<- function(k) 1-pi.function(k)
 		# Compute the probabilities of sampling degree k=0:
@@ -382,7 +382,8 @@ generate.sample <- function(theta, Njs, beta, sample.length, double.sampling.war
 				denominator<-  1 			
 				return(nominator/denominator)		
 			}
-			degree.probabilities<- unlist(lapply(js, probs.function))
+			degree.probabilities<- unlist(lapply(js, probs.function))			
+			
 			if( sum(degree.probabilities)+ no.sample.probability <  1- double.sampling.warning.thresh) double.sampling.warnings<- TRUE				
 			degree.sampled<- sample(x=js, prob=degree.probabilities, size=1)      
 			Uik[degree.sampled]<- Uik[degree.sampled]+1L
@@ -398,7 +399,14 @@ generate.sample <- function(theta, Njs, beta, sample.length, double.sampling.war
 	if(double.sampling.warnings) message("Double sampling probabilities non-negligeable. Consider lower beta values.")
 	return(degree.sampled.vec)
 }
-
+##Testing:
+#Njs<- c(100,500,500,200)
+#names(Njs)<- c("1","50","100","1000")
+#Njs<- as.table(Njs)
+#theta<- 1.1
+#beta<- 3e-8
+#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
+#(.Nj.table <- table(degree.sampled.vec))
 
 
 
@@ -423,29 +431,32 @@ var.theta<- function(sampled.degree.vector, Sij=make.Sij(sampled.degree.vector),
 
 # Solve for a fixed Nj given theta and beta:
 NjSolve <- function(sampled.degree.vector, S, Sij,j, Nj.table, beta, theta, maximal.Nj=1e6, ...){
-	const1 <- beta * S[j] * j^theta
-	target <- function(Nj){		
-		Uij <- Nj-Sij[paste(j),]
-		sum( (sampled.degree.vector==j) * 1/Uij - (sampled.degree.vector!=j) * const1 / (1 - const1 * Uij) )
-	}
+#	const1 <- beta * S[j] * j^theta
+#	target <- function(Nj){
+#		
+#		Uij <- Nj-Sij[paste(j),]
+#		sum( (sampled.degree.vector==j) * 1/Uij - (sampled.degree.vector!=j) * const1 / (1 - const1 * Uij) )
+#	}
+#	
+#	result <- uniroot(target, interval = c(Nj.table[paste(j)]+1, maximal.Nj),...)
 	
-	result <- uniroot(target, interval = c(Nj.table[paste(j)]+1, maximal.Nj),...)
+	max.S<- max(S)
+	max.Sij<-max(Sij[paste(j),])
 	
+	result<- (1+beta*j^theta*max.S*max.Sij)/(beta*j^theta*max.S)
 	return(result)
 }
 ## Testing:
-Njs<- c(100,500,500,200)
-names(Njs)<- c("1","50","100","1000")
+Njs<- c(100,200,200,200)
+names(Njs)<- c("10","50","100","1000")
 Njs<- as.table(Njs)
 theta<- 1.1
-beta<- 3e-8
-tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
+beta<- 3e-9
+tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
 (.Nj.table <- table(degree.sampled.vec))
 
 matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
 plot(.S <- compute.S(.Sij), type="s")
-
-
-NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=50, beta = beta, theta = theta, maximal.Nj = 1e10)
+NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=100, beta = beta, theta = theta, maximal.Nj = 1e15)
 
 
