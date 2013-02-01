@@ -3,48 +3,231 @@
 ###############################################################################
 
 
-## Estimate using a grid over theta and beta and gradient over Nj:
-estimate.rds2<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE) {  	
-	# Initializing:
+
+
+generate.rds.control<- function(				
+){
+	return(list(NULL))
+}
+## Testing:
+#generate.rds.control()
+
+
+
+
+
+# Solve for a fixed Nj given theta and beta:
+NjSolve <- function(sampled.degree.vector, S, Sij, j, Nj.table, beta, theta, maximal.Nj=1e6, ...){
+	## Initialize:
+	result<- NA
+	
+	const1 <- beta * j^theta
+	
+	target <- function(Nj){
+		
+		Uij <- Nj-Sij[paste(j),]
+		sum( (sampled.degree.vector==j) / Uij - (sampled.degree.vector!=j) * const1 * S / (1 - const1 * S* Uij) )
+	}
+	
+	
+	Nj.bound<- min((1+beta*j^theta*S*Sij[paste(j),])/(beta*j^theta*S))
+	Nj.low <- Nj.table[paste(j)]+1
+	Nj.high <- floor(Nj.bound)
+	
+	if(Nj.high < Nj.low) return(result)
+	
+	try(result <- uniroot(target, interval = c(Nj.low, Nj.high),...), silent=TRUE)
+	
+	if(isTRUE(length(result)==4L)) return(result$root)
+	
+	else if ( !is.infinite(target(Nj.low)) && !is.infinite(target(Nj.high)) && target(Nj.high)*target(Nj.low)>0  ){
+		if(target(Nj.low) < 0) return(Nj.low)
+		if(target(Nj.low) > 0) return(Nj.high)
+	}
+	
+}
+## Testing:
+#Njs<- c(100,200,200,200)
+#names(Njs)<- c("10","50","100","1000")
+#Njs<- as.table(Njs)
+#theta<- 1.1
+#beta<- 3e-9
+#degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4)
+#(.Nj.table <- table(degree.sampled.vec))
+#
+#matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
+#plot(.S <- compute.S(.Sij), type="s")
+#NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=100, beta = beta, theta = theta, maximal.Nj = 1e15)
+#NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=50, beta = beta, theta = theta, maximal.Nj = 1e15)
+
+
+
+
+
+
+# Get a list of beta, theta, returns a *table* with the MLE of every *observed* degree:
+estimateNjs <- function(x, sampled.degree.vector, S, Sij, Nj.observed.table){
+	# Note: Nj.table is expected to have zero counts *removed*
+	
+	beta <- x['beta']
+	theta <- x['theta']
+	
+	## TODO: Check if theta and beta values  
+	
+	
+	Njs <- rep(NA, length(Nj.observed.table))
+	names(Njs) <- names(Nj.observed.table)
+	
+	for (j in as.numeric(names(Nj.observed.table))){
+		Njs[paste(j)] <- NjSolve(sampled.degree.vector, S=S, Sij=Sij, Nj.table=Nj.observed.table, j=j, beta = beta, theta = theta, maximal.Nj = 1e15)
+	}
+	
+	
+	return(list(beta=beta, theta=theta, Njs=Njs))	
+}
+## Testing:
+#require(chords)
+#Njs<- c(100,200,200,200)
+#names(Njs)<- c("10","50","100","1000")
+#Njs<- as.table(Njs)
+#theta<- 1.1
+#beta<- 3e-9
+#degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4)
+#(.Nj.table <- table(degree.sampled.vec))
+#
+#matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
+#plot(.S <- compute.S(.Sij), type="s")
+#estimateNjs(list(beta=beta, theta=theta), degree.sampled.vec, .S, .Sij, .Nj.table[-1])
+
+
+
+
+
+
+
+
+getBetaBound <- function(Nj.table, Sij, S, theta) {
+	beta.bound.j <- function(j){
+		Uij <- Nj.table[paste(j)] - Sij[paste(j),]
+		beta.high<-   min( -1 * (log(S) + theta * log(j) + log(Uij) ), na.rm=TRUE)
+		return(beta.high)
+	}
+	beta.bound <- min(sapply(as.numeric(names(Nj.table)), beta.bound.j), na.rm=TRUE)
+	return(beta.bound)
+}
+## Testing:
+#require(chords)
+#Njs<- c(100,200,200,200)
+#names(Njs)<- c("10","50","100","1000")
+#Njs<- as.table(Njs)
+#theta<- 1.1
+#beta<- 3e-9
+#degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4)
+#(.Nj.table <- table(degree.sampled.vec))
+#matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
+#plot(.S <- compute.S(.Sij), type="s")
+#getBetaBound(.Nj.table[-1], .Sij, .S, theta)
+
+
+
+
+
+
+makeBetaThetaGrid <- function(thetas, beta.length, sampled.degree.vector, S, Sij, Nj.observed.table){
+	result <- list()
+	
+	for(i in 1:length(thetas)){
+		.theta <- thetas[i]
+		beta.high.log <- getBetaBound(Nj.table = Nj.observed.table[-1], Sij, S, .theta)
+		log.betas <- seq(from=beta.high.log, by=-0.01, length=beta.length)				
+		
+		for(k in 1:beta.length){
+			result <- c(result, list(c(theta=thetas[i], beta=exp(log.betas[k]))))			
+		}
+	}
+	return(result)	
+}
+## Testing:
+#require(chords)
+#Njs<- c(100,200,200,200)
+#names(Njs)<- c("10","50","100","1000")
+#Njs<- as.table(Njs)
+#theta<- 1.1
+#beta<- 3e-9
+#degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4)
+#(.Nj.table <- table(degree.sampled.vec))
+#matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
+#plot(.S <- compute.S(.Sij), type="s")
+#makeBetaThetaGrid(thetas=seq(-1,1,length=10), beta.length=10, degree.sampled.vec, .S, .Sij, .Nj.table[-1])
+
+
+
+
+
+
+
+
+## Estimate using a grid over theta and beta and find root of derivative for Nj:
+estimate.rds<- function (sampled.degree.vector, Sij, initial.thetas, beta.grid.length, 
+		arc=FALSE, control=generate.rds.control()) {
+	
+	## Initializing:
 	the.call<- sys.call()
-	method <- control$method
-	maxit <- control$maxit
-	fnscale <- control$fnscale
-	Nj.inflations<- control$Nj.inflations
-	beta.inflations<- control$beta.inflations
-	beta.scale <- control$beta.scale
+	
 	
 	max.observed.degree<- max(sampled.degree.vector)
 	N.j<- rep(0, max.observed.degree)
 	# Look for the degrees in the data with non trivial estimates:
-	Observed.Njs<-table(sampled.degree.vector)[-1] # table of degree counts withuot zero
-	Observed.js<- as.numeric(names(Observed.Njs))
-	maximal.degree.count<- max(Observed.Njs)
+	Nj.observed.table<-table(sampled.degree.vector)[-1] # table of degree counts withuot zero
+	Observed.js<- as.numeric(names(Nj.observed.table))
+	maximal.degree.count<- max(Nj.observed.table)
 	final.result<- NA
 	
 	
-	# Compute the size of the snowball along the sample:
+	# Compute the size of the snowball along the sample: (aka I_t)
 	S<- compute.S(Sij)
 	
+		### Generate theta and beta grid:
+	# Fills and formats initialization values as required by optim.wrap()
+	# Assumes initial.values is a list of lists. Each containing a theta, beta and an Nj vector.	
+		 
+	beta.theta.grid <- makeBetaThetaGrid(
+			thetas=initial.thetas, 
+			beta.length=beta.grid.length,
+			sampled.degree.vector = sampled.degree.vector,
+			S=S, 
+			Sij= Sij, 
+			Nj.observed.table=Nj.observed.table	)
 	
+	
+	
+	#### Estimate Nj given theta and beta
+	estimateNjs.local <- function(x) try(estimateNjs(x, sampled.degree.vector = sampled.degree.vector, S=S, Sij=Sij, Nj.observed.table = Nj.observed.table), silent=TRUE)
+	beta.theta.Nj.grid <- lapply(beta.theta.grid, estimateNjs.local)
+	
+	
+
 	# Wrap the likelihood function. 
 	# Implements constraints on parameters by taking real valued (canonical) parameters and remapping them.
-	likelihood.wrap<- function(par){
+	likelihood.wrap<- function(x){
 		# Initialize:
-		likelihood.result<- -9999999
+		beta <- x$beta
+		theta <- x$theta
+		Nj.table <- x$Nj
+		likelihood.result<- -1e15
 		
-		beta<- inv.transform.beta(par[['canonical.beta']]) # assumes beta is non negative and given in log scale
-		theta<- inv.transform.theta(canonical.theta = par[['canonical.theta']], control)
+		if(is.na(beta) || is.na(theta) || any(is.na(Nj.table))) return(likelihood.result)
+		
 		
 		N.j<- rep(0, max.observed.degree)
-		get.j.index<- function(x) grep(paste("canonical.Nj.",x,"$",sep=""), names(par) ) # Get the indexes in par of the Njs.  
-		observed.js.indexes<- 	sapply( Observed.js,  get.j.index)
-		N.j[Observed.js]<- inv.transform.Nj(par[observed.js.indexes]) # fill non trivial Nj estimates.
+		N.j[Observed.js]<- Nj.table[paste(Observed.js)] # fill non trivial Nj estimates.
 		
 		
 		# Checking estimates are within allowed range:
-		bad.Nj<- any( round(N.j[Observed.js],10) < round(Observed.Njs,10) ) # Estimated Nj smaller than observed
-		bad.beta<- beta >= BetaBound(Js= Observed.js, Nj=N.j[Observed.js], theta=theta)  # Defined beta values
+		bad.Nj<- any( round(N.j[Observed.js],10) < round(Nj.observed.table,10) ) # Estimated Nj no smaller than observed
+		
+		log.beta.bound <- getBetaBound(Nj.observed.table, Sij, S, theta)
+		bad.beta<- beta > exp(log.beta.bound)  # Defined beta values
 		if(isTRUE( bad.Nj || bad.beta)) return(likelihood.result) 
 		
 		# Compute likelihood:
@@ -69,99 +252,44 @@ estimate.rds2<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE,
 	}	
 	
 	
-	# TODO: B) Automate initialization values for theta. (maybe using moments of intervals between samples).
-	# TODO: A) Use better N_j initialization: IDW or inflated values.
+	#### Compute likelihood over all grid
+	likelihoods <- lapply(beta.theta.Nj.grid, likelihood.wrap)
+	best.index <- which.max(unlist(likelihoods))
 	
 	
-	### Generate initial values:
-	# Fills and formats initialization values as required by optim.wrap()
-	# Assumes initial.values is a list of lists. Each containing a theta, beta and an Nj vector.	
 	
-	initial.value.list <- makeCanonicalInitialization(
-			initial.values = initial.values, 
-			sampled.degree.vector = sampled.degree.vector, 
-			Nj.inflations = Nj.inflations, 
-			beta.inflations = beta.inflations, 
-			scale = beta.scale)
-	
-	# In case of convergence problems, try different optimization methods. In particular: "Nelder-Mead", "SANN",
-	optim.wrap<- function(x) {
-		try(optim(par=unlist(x), fn=likelihood.wrap, method=method , control=list(fnscale=fnscale, maxit=maxit)))
-	}
-	
-	likelihood.optim<-lapply(initial.value.list,  optim.wrap )
-	
-	
-	# Convert output from canonical form to original form:
-	prepare.result<- function(x){
-		result<- simpleError("Optim did not converge")
-		
-		if(length(x)==5L){
-			observed.js.indexes<- unlist(lapply(Observed.js, function(y) grep(paste("canonical.Nj.",y,"$",sep=""), names(x$par))))
-			N.j[Observed.js]<- exp(x$par[observed.js.indexes]) # fill non trivial Nj estimates.		
-			
-			result<- list( 
-					beta=inv.transform.beta(x$par[['canonical.beta']]), 
-					theta=inv.transform.theta(x$par[['canonical.theta']], control),
-					initial.values=initial.values,
-					Nj=N.j,
-					iterations=x$counts,
-					likelihood.optimum=x$value, 
-					call=the.call)			
-		}		
-		return(result)
-	} 
-	
-	temp.result<- lapply(likelihood.optim, prepare.result)
-	
-	if(  any(sapply(temp.result, length) > 2 )   ){
-		clean.temp.result<- as.list(temp.result[sapply(temp.result, length) > 2])
-		if(!all.solutions){ 
-			final.result<- temp.result[[  which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum)) ]]
-		}
-		else{
-			final.result<- clean.temp.result
-		} 
-	}
-	else{
-		stop('Estimation did not converge. Try differet intialization values or optimization method.')
-	}
+	#### Prepare and return result:		
+	final.result<- list( 
+			beta=beta.theta.Nj.grid[[best.index]]$beta, 
+			theta=beta.theta.Nj.grid[[best.index]]$theta,
+			Nj=beta.theta.Nj.grid[[best.index]]$Nj,
+			likelihood.optimum=likelihoods[[best.index]], 
+			call=the.call)
 	
 	return(final.result)							
 }
 
 ### Testing: 
-## Testing with initialization from **true** values:
-# Generate data:
-Njs<- c(100,100,100,100)
-names(Njs)<- c("1","50","100","1000")
-Njs<- as.table(Njs)
-theta<- 1.1
-beta<- 2.5e-8
-tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
-plot(degree.sampled.vec, type='h', main='Sample')
+#require(chords)
+#Njs<- c(100,1000,200,200)
+#names(Njs)<- c("10","20","100","1000")
+#Njs<- as.table(Njs)
+#theta<- 1.5
+#beta<- 3e-9
+#degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3)
+#(.Nj.table <- table(degree.sampled.vec))
+#matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
+#plot(.S <- compute.S(.Sij), type="s")
+#estimate.rds(degree.sampled.vec, .Sij, initial.thetas=seq(-2,2,length=20), beta.grid.length=20)
 
-# Estimate:
-
-
-makeCanonicalInitialization(
-		initial.values = lapply(seq(-1,1,0.1), function(x) {list(theta = x)}), 
-		degree.sampled.vec, 
-		beta.inflations = 1, Nj.inflations = 1, scale=1)
-
-str(rds.result<- estimate.rds2(degree.sampled.vec, Sij = make.Sij(degree.sampled.vec), 
-				method='BFGS',				
-				initial.values = list(),  
-				control = generate.rds.control( maxit = 100)))
-
-# Inspect estimation:
-str(rds.result)
-plot(Njs, type='h', lwd=2.5)	
-points(rds.result$Nj, type='h', col='orange', lwd=2)
-points(rds.result[[1]]$Nj, type='h', col='orange', lwd=2)
-points(rds.result[[2]]$Nj, type='h', col='orange', lwd=2)
-points(rds.result[[3]]$Nj, type='h', col='orange', lwd=2)
-
+# Testing with White data:
+#source('~/Dropbox/Yakir/White/getData.R')
+#data.Sjt <- make.Sij(data.degree)
+#estimate <- estimate.rds(sampled.degree.vector=data.degree, 
+#		Sij = data.Sjt, 
+#		initial.thetas=seq(-2,2,length=20),
+#		beta.grid.length=10,                            
+#		control = generate.rds.control())
 
 
 

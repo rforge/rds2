@@ -8,7 +8,5 @@ Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>
 Description: Maximum likelihood estimation of population size and degree distribution.
 License: GPL-2
 Collate: 
-	'chords.R'
-	'beta_js.R'
-	'estimateRDS.R'
 	'estimateRDS2.R'
+	'utilities.R'

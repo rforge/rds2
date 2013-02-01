@@ -1,53 +1,6 @@
-#' Estimates oppulation size and degree distribution in respondant driven samples(RDS).
-#' 
-#' \tabular{ll}{
-#' Package: \tab rds2\cr
-#' Type: \tab Package\cr
-#' Version: \tab 0.5\cr
-#' Date: \tab 2011-12-25\cr
-#' License: \tab GPL (>= 2)\cr
-#' }
-#' 
-#' Maximum likelihood estimation of population size using the methodology in [cite].
-#'
-#' @name rds2-package
-#' @aliases rds2
-#' @docType package
-#' @title Population size estimation for despondant driven sampling
-#' @author Jonathan Rosenblatt 
-NA
-
-#' Utility functions for creating snowball matrix.
-#' Assumes input is a table of degrees and degree counts.
-#' @param data The sample
-#' @return The sum of degrees for each rank 
-#' @author Jonathan Rosnblatt
-#' @export
-ranks.sum<- function(data){
-	data.table<- table(data)
-	result<- as.numeric(rownames(data.table))*c(data.table)
-	return(result)
-}
-
-
-
-#' Make the Sij matrix assuming no droouts from the snowball
-#' @param data 
-#' @return TBC
-#' @author johnros
-#' @export
-make.Sij<- function(data){
-	stopifnot(length(unique(data))>1L)
-	result<- matrix(0, ncol=length(data), nrow=max(data))
-	for (i in 1:(length(data)-1)){ result[data[i],i+1]<- result[data[i],i+1]+1 }  
-	result<- t(apply(result, 1 , cumsum))
-	non.empty.ind<- apply(result, 1, sum)!=0
-	.row.names<- as.character(seq(along.with=non.empty.ind)[non.empty.ind])
-	result<- result[non.empty.ind,]
-	rownames(result)<- .row.names
-	return(result)
-}
- 
+# 
+# Author: johnros
+###############################################################################
 
 
 
@@ -79,8 +32,6 @@ inv.transform.beta<- function(canonical.beta, scale=generate.beta.scale()){
 
 
 
-
-
 # Transforms Nj back and forth to canonical (real) scale:
 generate.Nj.scale <- function(scale=1) return(scale)
 
@@ -98,12 +49,6 @@ inv.transform.Nj<- function(canonical.Nj, scale=generate.Nj.scale()){
 
 
 
-
-
-
-
-## TODO: B) Function no longer needed as only the best result is returned by estimate.rds
-
 #' Compares the output of the optimizaton for different initialization values.
 #' @param estimation An rds2 estimation object
 #' @return Used only for printing
@@ -119,26 +64,6 @@ comparison <- function (estimation) {
 
 
 
-
-#' Compares the output of the optimizaton for different initialization values.
-#' @param Sij 
-#' @return Used for creating the Snowball size given an Sij matrix
-#' @author johnros
-#' @export
-compute.S<- function(Sij){
-	result<- apply(Sij, 2, sum)
-	non.null.ind<- cumsum(result!=0)
-	result[non.null.ind==0]<- 1    
-	return(as.integer(result))
-}
-
-
-
-
-
-
-
-
 generate.rds.control<- function(
 		maxit=500, 
 		method="Nelder-Mead",
@@ -146,11 +71,14 @@ generate.rds.control<- function(
 		beta.inflations= exp(-seq(2,0, by=-0.02)),
 		fnscale=-1000,
 		beta.scale=10e5
-		){
+){
 	return(list(maxit=maxit, method=method, Nj.inflations=Nj.inflations, beta.inflations=beta.inflations, fnscale=fnscale, beta.scale=beta.scale))
 }
 ## Testing:
 #generate.rds.control()
+
+
+
 
 
 
@@ -200,8 +128,6 @@ makeNjs <- function(sampled.degree.vector, Nj.inflations){
 #beta<- 2e-8
 #tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
 #makeNjs(degree.sampled.vec, c(1,1.5))
-
-
 
 
 
@@ -291,33 +217,8 @@ makeCanonicalInitialization <- function(initial.values, sampled.degree.vector, N
 #Njs<-rpois(20,10)
 #names(Njs)<- seq(along.with=Njs)
 #makeCanonicalInitialization(list(list(theta=10, beta=2, Njs=Njs)), degree.sampled.vec, c(1,2,3), c(1,2), 1)[[1]]
-	
 
 
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-			 
-
-createDegreeCount <- function(network.size, network.density) {
-	neighbour.count<- lapply(seq(1, network.size), function(x) rbinom(1, network.size, network.density))
-	return(table(unlist(neighbour.count[neighbour.count>0])))
-}
-## Testing: 
-#(Njs<- createDegreeCount(network.size = 1e5, network.density = 0.01))
 
 
 
@@ -346,117 +247,184 @@ BetaBound <- function(Js, Nj, theta) {
 
 
 
-generate.sample <- function(theta, Njs, beta, sample.length, double.sampling.warning.thresh=0.05) {
-	# Initializing:
-	js<- as.numeric(names(Njs))
-	N<- sum(Njs)
-	maximal.beta<- 1/ (N * max(Njs) * max(js)^theta )
-	double.sampling.warnings<- FALSE
-	
-	
-	# Input validations:
-	error.messge<- paste("beta value too large. Errors might occur. \nFor the given degree frequencies, consider keeping it under ", signif(maximal.beta), sep="" )
-	if(beta > maximal.beta) message(error.messge) # Note: larger beta favour sampling non 0 degrees.
-	stopifnot(min(js)>0)
-	
 
+
+
+
+estimate.rds<- function (sampled.degree.vector, Sij, initial.values, arc=FALSE, control=generate.rds.control(), all.solutions=FALSE) {  	
+	# Initializing:
+	the.call<- sys.call()
+	method <- control$method
+	maxit <- control$maxit
+	fnscale <- control$fnscale
+	Nj.inflations<- control$Nj.inflations
+	beta.inflations<- control$beta.inflations
+	beta.scale <- control$beta.scale
 	
-	# Preparing to sample:
-	Uik<- rep(0L, length.out=max(js))
-	names(Uik)<- seq(along.with=Uik)
-	snowball<- 1L
-	degree.sampled.vec<- rep(NA, sample.length)
-	# Start sampling:
-	for(i in seq(1, sample.length)){	
-		pi.function<- function(k) beta * k^theta * snowball * (Njs[paste(k)] - Uik[k] )
-		n.pi.function<- function(k) 1-pi.function(k)
-		# Compute the probabilities of sampling degree k=0:
-		no.sample.probability<- prod(unlist(lapply(js, n.pi.function )))
-		sample.someone<- as.logical(rbinom(1, 1, prob = 1 - no.sample.probability ))		
-		if(sample.someone){
-			# Compute the probabilities of sampling degree k>0:
-			probs.function<- function(k){
-				nominator<-  pi.function(k) * prod(unlist(lapply(js[js!=k], n.pi.function)))  
-				# Note: the true probability is not needed due to the normalization in sample(). A constant is used insted.
-				# denominator<-  1 - prod(unlist(lapply(js, n.pi.function)))
-				denominator<-  1 			
-				return(nominator/denominator)		
-			}
-			degree.probabilities<- unlist(lapply(js, probs.function))			
+	max.observed.degree<- max(sampled.degree.vector)
+	N.j<- rep(0, max.observed.degree)
+	# Look for the degrees in the data with non trivial estimates:
+	Observed.Njs<-table(sampled.degree.vector)[-1] # table of degree counts withuot zero
+	Observed.js<- as.numeric(names(Observed.Njs))
+	maximal.degree.count<- max(Observed.Njs)
+	final.result<- NA
+	
+	
+	# Compute the size of the snowball along the sample:
+	S<- compute.S(Sij)
+	
+	
+	# Wrap the likelihood function. 
+	# Implements constraints on parameters by taking real valued (canonical) parameters and remapping them.
+	likelihood.wrap<- function(par){
+		# Initialize:
+		likelihood.result<- -9999999
+		
+		beta<- inv.transform.beta(par[['canonical.beta']]) # assumes beta is non negative and given in log scale
+		theta<- inv.transform.theta(canonical.theta = par[['canonical.theta']], control)
+		
+		N.j<- rep(0, max.observed.degree)
+		get.j.index<- function(x) grep(paste("canonical.Nj.",x,"$",sep=""), names(par) ) # Get the indexes in par of the Njs.  
+		observed.js.indexes<- 	sapply( Observed.js,  get.j.index)
+		N.j[Observed.js]<- inv.transform.Nj(par[observed.js.indexes]) # fill non trivial Nj estimates.
+		
+		
+		# Checking estimates are within allowed range:
+		bad.Nj<- any( round(N.j[Observed.js],10) < round(Observed.Njs,10) ) # Estimated Nj smaller than observed
+		bad.beta<- beta >= BetaBound(Js= Observed.js, Nj=N.j[Observed.js], theta=theta)  # Defined beta values
+		if(isTRUE( bad.Nj || bad.beta)) return(likelihood.result) 
+		
+		# Compute likelihood:
+		if(is.numeric(beta) && is.numeric(theta) && !is.infinite(theta) && !is.infinite(beta) ) {
+			result<- .C("likelihood", 
+					sample=as.integer(sampled.degree.vector), 
+					Sij=as.integer(as.matrix(Sij)),
+					S=as.integer(S),				  
+					beta=as.numeric(beta), 
+					theta=as.numeric(theta), 
+					Nj=as.numeric(N.j), 
+					observed_degrees=as.integer(rownames(Sij)),
+					n=as.integer(length(sampled.degree.vector)), 
+					N=as.integer(length(N.j)),
+					N_observed=as.integer(nrow(Sij)),				  
+					arc=arc,
+					result=as.double(0))		  
 			
-			if( sum(degree.probabilities)+ no.sample.probability <  1- double.sampling.warning.thresh) double.sampling.warnings<- TRUE				
-			degree.sampled<- sample(x=js, prob=degree.probabilities, size=1)      
-			Uik[degree.sampled]<- Uik[degree.sampled]+1L
-			snowball<- sum(Uik)
-			degree.sampled.vec[i]<- as.integer(degree.sampled)    
-		}  
-		else{ 
-			degree.sampled.vec[i]<- 0L
-		}
+		}	
+		if(!is.infinite(result$result)) likelihood.result<-result$result
+		return(likelihood.result)		
+	}	
+	
+	
+	# TODO: B) Automate initialization values for theta. (maybe using moments of intervals between samples).
+	# TODO: A) Use better N_j initialization: IDW or inflated values.
+	
+	
+	### Generate initial values:
+	# Fills and formats initialization values as required by optim.wrap()
+	# Assumes initial.values is a list of lists. Each containing a theta, beta and an Nj vector.	
+	
+	initial.value.list <- makeCanonicalInitialization(
+			initial.values = initial.values, 
+			sampled.degree.vector = sampled.degree.vector, 
+			Nj.inflations = Nj.inflations, 
+			beta.inflations = beta.inflations, 
+			scale = beta.scale)
+	
+	# In case of convergence problems, try different optimization methods. In particular: "Nelder-Mead", "SANN",
+	optim.wrap<- function(x) {
+		try(optim(par=unlist(x), fn=likelihood.wrap, method=method , control=list(fnscale=fnscale, maxit=maxit)))
 	}
 	
-	# Exiting:
-	if(double.sampling.warnings) message("Double sampling probabilities non-negligeable. Consider lower beta values.")
-	return(degree.sampled.vec)
-}
-##Testing:
-#Njs<- c(100,500,500,200)
-#names(Njs)<- c("1","50","100","1000")
-#Njs<- as.table(Njs)
-#theta<- 1.1
-#beta<- 3e-8
-#tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e3))
-#(.Nj.table <- table(degree.sampled.vec))
-
-
-
-
-var.theta<- function(sampled.degree.vector, Sij=make.Sij(sampled.degree.vector), Njs, theta, beta){
-	I<- compute.S(Sij)
-	N<- sum(Njs*seq(along.with=Njs))
-	Nj.uniques<- sort(unique(sampled.degree.vector))
-	total.sampling<- length(sampled.degree.vector)
-	make.value<- Vectorize(function(k,t){
-				if(!(k %in% rownames(Sij))) return(0)
-				else return(
-							log(k)^2* k^theta* I[t]/N *(Njs[k]/N - Sij[as.character(k),t]/N)
-					)
-			})
-	information<- beta * N * sum(outer(Nj.uniques, seq(1,total.sampling), FUN="make.value"))
-	return( (1/information)/N )
-}
-## Example:
-#var.theta(degree.sampled.vec, make.Sij(degree.sampled.vec), rds.result$Nj, rds.result$theta, rds.result$beta )
-
-
-# Solve for a fixed Nj given theta and beta:
-NjSolve <- function(sampled.degree.vector, S, Sij,j, Nj.table, beta, theta, maximal.Nj=1e6, ...){
-#	const1 <- beta * S[j] * j^theta
-#	target <- function(Nj){
-#		
-#		Uij <- Nj-Sij[paste(j),]
-#		sum( (sampled.degree.vector==j) * 1/Uij - (sampled.degree.vector!=j) * const1 / (1 - const1 * Uij) )
-#	}
-#	
-#	result <- uniroot(target, interval = c(Nj.table[paste(j)]+1, maximal.Nj),...)
+	likelihood.optim<-lapply(initial.value.list,  optim.wrap )
 	
-	max.S<- max(S)
-	max.Sij<-max(Sij[paste(j),])
 	
-	result<- (1+beta*j^theta*max.S*max.Sij)/(beta*j^theta*max.S)
-	return(result)
+	# Convert output from canonical form to original form:
+	prepare.result<- function(x){
+		result<- simpleError("Optim did not converge")
+		
+		if(length(x)==5L){
+			observed.js.indexes<- unlist(lapply(Observed.js, function(y) grep(paste("canonical.Nj.",y,"$",sep=""), names(x$par))))
+			N.j[Observed.js]<- exp(x$par[observed.js.indexes]) # fill non trivial Nj estimates.		
+			
+			result<- list( 
+					beta=inv.transform.beta(x$par[['canonical.beta']]), 
+					theta=inv.transform.theta(x$par[['canonical.theta']], control),
+					initial.values=initial.values,
+					Nj=N.j,
+					iterations=x$counts,
+					likelihood.optimum=x$value, 
+					call=the.call)			
+		}		
+		return(result)
+	} 
+	
+	temp.result<- lapply(likelihood.optim, prepare.result)
+	
+	if(  any(sapply(temp.result, length) > 2 )   ){
+		clean.temp.result<- as.list(temp.result[sapply(temp.result, length) > 2])
+		if(!all.solutions){ 
+			final.result<- temp.result[[  which.max(sapply(clean.temp.result, function(x) x$likelihood.optimum)) ]]
+		}
+		else{
+			final.result<- clean.temp.result
+		} 
+	}
+	else{
+		stop('Estimation did not converge. Try differet intialization values or optimization method.')
+	}
+	
+	return(final.result)							
 }
-## Testing:
-Njs<- c(100,200,200,200)
-names(Njs)<- c("10","50","100","1000")
-Njs<- as.table(Njs)
-theta<- 1.1
-beta<- 3e-9
-tail(degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4))
-(.Nj.table <- table(degree.sampled.vec))
 
-matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
-plot(.S <- compute.S(.Sij), type="s")
-NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=100, beta = beta, theta = theta, maximal.Nj = 1e15)
-
+##### Testing: 
+#require(chords)
+#data(simulation, package='chords')
+#temp.data<- unlist(data3[1,7000:7500])
+## Initialize only with thetas:
+#initial.values<- list(list(theta=-1),list(theta=1))
+### TODO: A)fix estimate.rds
+#(rds.result<- estimate.rds(sampled.degree.vector=temp.data , Sij=make.Sij(temp.data), 
+#					initial.values=initial.values, 
+#					control=generate.rds.control(maxit=2000, 
+#							method="Nelder-Mead", 
+#							beta.inflations = exp(-seq(2,0, by=-0.02)), 
+#							Nj.inflations = 1, 
+#							beta.scale = 1, 
+#							fnscale = -10)))
+#plot(rds.result$Nj, type='h', xlab='Degree', ylab=expression(N[j]), main='Estimated Degree Distribution')
+#
+#
+#### Testing with Previous results:
+#load(file="/Users/jonathanrosenblatt/Dropbox/Yakir/White/testingVer0.69.RData")
+#.C("likelihood", 
+#		sample=as.integer(data.degree), 
+#		Sij=as.integer(as.matrix(data.Sjt)),
+#		S=as.integer(compute.S(data.Sjt)),				  
+#		beta=as.numeric(initial.values[[1]]$beta), 
+#		theta=as.numeric(initial.values[[1]]$theta), 
+#		Nj=as.numeric(initial.values[[1]]$Njs), 
+#		observed_degrees=as.integer(rownames(data.Sjt)),
+#		n=as.integer(length(data.degree)), 
+#		N=as.integer(length(initial.values[[1]]$Njs)),
+#		N_observed=as.integer(nrow(data.Sjt)),				  
+#		arc=FALSE,
+#		result=as.double(0))
+#
+#
+#
+#
+#
+#names(initial.values[[1]])[3]<-"Njs" 
+#estimation4<- estimate.rds(sampled.degree.vector=data.degree, 
+#		Sij = data.Sjt, 
+#		initial.values=initial.values, 
+#		control = generate.rds.control(
+#				maxit=0, 
+#				method="BFGS", 
+#				beta.inflations = 1, 
+#				Nj.inflations = 1, 
+#				beta.scale = 1, 
+#				fnscale = -1                                 
+#		))
 
