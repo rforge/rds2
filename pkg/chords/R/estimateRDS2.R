@@ -10,7 +10,7 @@ generate.rds.control<- function(
 	return(list(NULL))
 }
 ## Testing:
-#generate.rds.control()
+# generate.rds.control()
 
 
 
@@ -38,7 +38,7 @@ NjSolve <- function(sampled.degree.vector, S, Sij, j, Nj.table, beta, theta, max
 	
 	try(result <- uniroot(target, interval = c(Nj.low, Nj.high),...), silent=TRUE)
 	
-	if(isTRUE(length(result)==4L)) return(result$root)
+	if(length(result)>1) return(result$root)
 	
 	else if ( !is.infinite(target(Nj.low)) && !is.infinite(target(Nj.high)) && target(Nj.high)*target(Nj.low)>0  ){
 		if(target(Nj.low) < 0) return(Nj.low)
@@ -47,18 +47,18 @@ NjSolve <- function(sampled.degree.vector, S, Sij, j, Nj.table, beta, theta, max
 	
 }
 ## Testing:
-#Njs<- c(100,200,200,200)
-#names(Njs)<- c("10","50","100","1000")
-#Njs<- as.table(Njs)
-#theta<- 1.1
-#beta<- 3e-9
-#degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4)
-#(.Nj.table <- table(degree.sampled.vec))
-#
-#matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
-#plot(.S <- compute.S(.Sij), type="s")
-#NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=100, beta = beta, theta = theta, maximal.Nj = 1e15)
-#NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=50, beta = beta, theta = theta, maximal.Nj = 1e15)
+# Njs<- c(100,200,200,200)
+# names(Njs)<- c("10","50","100","1000")
+# Njs<- as.table(Njs)
+# theta<- 1.1
+# beta<- 3e-9
+# degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4)
+# (.Nj.table <- table(degree.sampled.vec))
+# matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
+# plot(.S <- compute.S(.Sij), type="s")
+# undebug(chords:::NjSolve)
+# chords:::NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=100, beta = beta, theta = theta, maximal.Nj = 1e15)
+# chords:::NjSolve(degree.sampled.vec, .S, .Sij, Nj.table = .Nj.table, j=50, beta = beta, theta = theta, maximal.Nj = 1e15)
 
 
 
@@ -69,8 +69,8 @@ NjSolve <- function(sampled.degree.vector, S, Sij, j, Nj.table, beta, theta, max
 estimateNjs <- function(x, sampled.degree.vector, S, Sij, Nj.observed.table){
 	# Note: Nj.table is expected to have zero counts *removed*
 	
-	beta <- x['beta']
-	theta <- x['theta']
+	beta <- unlist(x['beta'])
+	theta <- unlist(x['theta'])
 	
 	## TODO: Check if theta and beta values  
 	
@@ -79,6 +79,7 @@ estimateNjs <- function(x, sampled.degree.vector, S, Sij, Nj.observed.table){
 	names(Njs) <- names(Nj.observed.table)
 	
 	for (j in as.numeric(names(Nj.observed.table))){
+    # j<- 10
 		Njs[paste(j)] <- NjSolve(sampled.degree.vector, S=S, Sij=Sij, Nj.table=Nj.observed.table, j=j, beta = beta, theta = theta, maximal.Nj = 1e15)
 	}
 	
@@ -86,18 +87,18 @@ estimateNjs <- function(x, sampled.degree.vector, S, Sij, Nj.observed.table){
 	return(list(beta=beta, theta=theta, Njs=Njs))	
 }
 ## Testing:
-#require(chords)
-#Njs<- c(100,200,200,200)
-#names(Njs)<- c("10","50","100","1000")
-#Njs<- as.table(Njs)
-#theta<- 1.1
-#beta<- 3e-9
-#degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4)
-#(.Nj.table <- table(degree.sampled.vec))
-#
-#matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
-#plot(.S <- compute.S(.Sij), type="s")
-#estimateNjs(list(beta=beta, theta=theta), degree.sampled.vec, .S, .Sij, .Nj.table[-1])
+# Njs<- c(100,200,200,200)
+# names(Njs)<- c("10","50","100","1000")
+# Njs<- as.table(Njs)
+# theta<- 1.1
+# beta<- 3e-9
+# degree.sampled.vec<- generate.sample(theta, Njs, beta, sample.length=1e4)
+# (.Nj.table <- table(degree.sampled.vec))
+# matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
+# plot(.S <- compute.S(.Sij), type="s")
+# 
+# debug(chords:::estimateNjs)
+# chords:::estimateNjs(list(beta=beta, theta=theta), degree.sampled.vec, .S, .Sij, .Nj.table[-1])
 
 
 
@@ -116,7 +117,6 @@ getBetaBound <- function(Nj.table, Sij, S, theta) {
 	return(beta.bound)
 }
 ## Testing:
-#require(chords)
 #Njs<- c(100,200,200,200)
 #names(Njs)<- c("10","50","100","1000")
 #Njs<- as.table(Njs)
@@ -126,7 +126,8 @@ getBetaBound <- function(Nj.table, Sij, S, theta) {
 #(.Nj.table <- table(degree.sampled.vec))
 #matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
 #plot(.S <- compute.S(.Sij), type="s")
-#getBetaBound(.Nj.table[-1], .Sij, .S, theta)
+
+# chords:::getBetaBound(.Nj.table[-1], .Sij, .S, theta)
 
 
 
@@ -148,7 +149,6 @@ makeBetaThetaGrid <- function(thetas, beta.length, sampled.degree.vector, S, Sij
 	return(result)	
 }
 ## Testing:
-#require(chords)
 #Njs<- c(100,200,200,200)
 #names(Njs)<- c("10","50","100","1000")
 #Njs<- as.table(Njs)
@@ -158,7 +158,8 @@ makeBetaThetaGrid <- function(thetas, beta.length, sampled.degree.vector, S, Sij
 #(.Nj.table <- table(degree.sampled.vec))
 #matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
 #plot(.S <- compute.S(.Sij), type="s")
-#makeBetaThetaGrid(thetas=seq(-1,1,length=10), beta.length=10, degree.sampled.vec, .S, .Sij, .Nj.table[-1])
+
+#chords:::makeBetaThetaGrid(thetas=seq(-1,1,length=10), beta.length=10, degree.sampled.vec, .S, .Sij, .Nj.table[-1])
 
 
 
@@ -187,7 +188,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.thetas, beta.grid.l
 	# Compute the size of the snowball along the sample: (aka I_t)
 	S<- compute.S(Sij)
 	
-		### Generate theta and beta grid:
+	### Generate theta and beta grid:
 	# Fills and formats initialization values as required by optim.wrap()
 	# Assumes initial.values is a list of lists. Each containing a theta, beta and an Nj vector.	
 		 
@@ -280,7 +281,7 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.thetas, beta.grid.l
 #(.Nj.table <- table(degree.sampled.vec))
 #matplot(t(.Sij <- make.Sij(degree.sampled.vec)), type="s")
 #plot(.S <- compute.S(.Sij), type="s")
-#estimate.rds(degree.sampled.vec, .Sij, initial.thetas=seq(-2,2,length=20), beta.grid.length=20)
+# estimate.rds(degree.sampled.vec, .Sij, initial.thetas=seq(-2,2,length=40), beta.grid.length=20)
 
 # Testing with White data:
 #source('~/Dropbox/Yakir/White/getData.R')
@@ -290,6 +291,8 @@ estimate.rds<- function (sampled.degree.vector, Sij, initial.thetas, beta.grid.l
 #		initial.thetas=seq(-2,2,length=20),
 #		beta.grid.length=10,                            
 #		control = generate.rds.control())
+
+
 
 
 
