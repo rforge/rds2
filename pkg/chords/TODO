@@ -1,8 +1,0 @@
-0. Fix estimate.rds.grid to run in acceptable times.
-1. Document estimate.rds.grid
-2. Estimate White & Cyprian
-3. Estimate other projects.
-4. Verify SImon's result by starting with his optimal values.
-4. Reproduce Simon's result with gradient search.
-5. Parallelized verion?
-

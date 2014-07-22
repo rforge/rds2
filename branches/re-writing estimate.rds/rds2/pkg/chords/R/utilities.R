@@ -45,7 +45,8 @@ make.Sij<- function(data){
 #' @author johnros
 #' @export
 compute.S<- function(Sij){
-	result<- apply(Sij, 2, sum)
+  #   Sij<- make.Sij(temp.data) 
+	result<- colSums(Sij)
 	non.null.ind<- cumsum(result!=0)
 	result[non.null.ind==0]<- 1    
 	return(as.integer(result))

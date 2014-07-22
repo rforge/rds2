@@ -1,12 +1,10 @@
 Package: chords
 Type: Package
 Title: Estimation in respondent driven samples.
-Version: 0.71
-Date: 2014-05-19
+Version: 0.8
+Date: 2014-06-30
 Author: Jonathan Rosenblatt
 Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>
-Description: Maximum likelihood estimation of population size and degree distribution.
+Description: Maximum likelihood estimation in respondent driven samples.
 License: GPL-2
-Collate: 
-	'estimateRDS2.R'
-	'utilities.R'
+Imports:MASS
