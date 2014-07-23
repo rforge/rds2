@@ -1,7 +1,0 @@
-export(compute.S)
-export(estimate.rds)
-export(make.Sij)
-export(var.theta)
-export(generate.sample)
-export(generate.rds.control)
-useDynLib(chords)

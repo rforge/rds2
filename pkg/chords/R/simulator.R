@@ -87,7 +87,8 @@ compareNkEstimate <- function(object1, object2){
     log.bk1[(length(log.bk1)+1):len2] <- 0
   }
 
-  plot(Nk2, type='h', lwd=2, main='N_k')
+  y.lim <- max(c(Nk2,Nk1))
+  plot(Nk2, type='h', lwd=2, main='N_k',ylim=c(0,y.lim))
   points(Nk1, col='red', type='h')
   
   plot(log.bk2, type='h', lwd=2, main='Log beta_ks')

@@ -5,21 +5,17 @@
 \title{Population size estimation for respondent driven sampling}
 \description{
   Estimates population size and degree distribution in
-  respondent driven samples(RDS).
+  respondent driven samples (RDS).
 }
 \details{
-  \tabular{ll}{ Package: \tab chords\cr Type: \tab Package\cr
-  Version: \tab 0.5\cr Date: \tab 2011-12-25\cr License:
-  \tab GPL (>= 2)\cr }
-
-  Maximum likelihood estimation of population size using
-  the methodology in the reference. See \link{estimate.rds} for details.
+  Maximum likelihood estimation of population size using the methodology in the reference. 
+  The fundamental idea is of modeling the sampling as an epidemic process.
+  See \code{\link{estimate.b.k}} for details.
 }
 \author{
   Jonathan D. Rosenblatt \email{john.ros.work@gmail.com}
 }
 \references{
-	Respondent Driven Sampling as an Epidemic Process
-	Berchenko Y., Rosenblatt J.D., White R.G.,Frost S.D.W. (Submitted)    
+	[1] Berchenko, Yakir, Jonathan Rosenblatt, and Simon D. W. Frost. "Modeling and Analyzing Respondent Driven Sampling as a Counting Process."" arXiv:1304.3505, April 11, 2013. HTTP://arXiv.org/abs/1304.3505.
 }
 

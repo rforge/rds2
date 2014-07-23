@@ -1,9 +1,7 @@
-export(makeSnowBall)
-export(initializeRDS_Object)
+export(initializeRdsObject)
 export(estimate.b.k)
 export(getTheta)
-export(rdsObjectConstructor)
 export(makeRdsSample)
-export(compareNkEstimate)
+export(thetaSmoothingNks)
 import(MASS)
-useDynLib(chords)
+
