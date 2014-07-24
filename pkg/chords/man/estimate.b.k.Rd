@@ -9,7 +9,9 @@ Performs maximum likelihood estimation of a population size from a respondent dr
 The underlying idea is that the sample spreads like an epidemic in the target population as described in the reference.
 }
 \usage{
-  estimate.b.k(rds.object, const=1e-4, smooth.degrees.ind=FALSE)
+  estimate.b.k(rds.object, 
+  const=1,
+  impute.Nks=TRUE)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -17,11 +19,14 @@ The underlying idea is that the sample spreads like an epidemic in the target po
   A object of class \code{rds-object} as constructed by \code{\link{initializeRdsObject}}
 }
 \item{const}{A scaler value for numerical stability. Should not be altered.}
-\item{smooth.degrees.ind}{Should the degree counts be smoothed before estimation?}
+\item{impute.Nks}{Should inestimable values be imputed?}
 }
+
 \details{
 See the reference for a description of the likelihood problem solved.
 Optimization is performed by noting that likelihood is coordinate-wise convex, thus amounts to a series of line-searches.
+
+If \code{impute.Nk} is enabled (default), a simpe heuristic is used to estimate degree frequencies which are inestimable using maximum likelihood. This essentially consists of scaling the observed degree by the average observed-to-estimated factor over all estimable frequencies.
 }
 
 \note{

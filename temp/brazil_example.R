@@ -1,4 +1,4 @@
-source('temp/jass_example.R')
+source('temp/Uganda_example.R')
 library(dplyr)
 rds.sample2 <- tbl_df(rds.sample)
 
@@ -17,12 +17,13 @@ brazil.csv3$interviewDt2 <- brazil.csv3$interviewDt
 brazil.csv3$interviewDt <- as.character(brazil.csv3$interviewDt) %>%  dmy %>% unclass
 
 rds.object2<- initializeRdsObject(brazil.csv3)
-str(rds.object2)
 rds.object2$estimates <- estimate.b.k(rds.object = rds.object2 )
-str(rds.object2)
+table(rds.object2$estimates$convergence)
 plot(rds.object2$estimates$Nk.estimates, type='h')
+sum(rds.object2$estimates$Nk.estimates)
+nrow(brazil.csv3)
 plot(rds.object2$estimates$log.bk.estimates, type='h')
-getTheta(rds.object2)
+getTheta(rds.object2)$theta
 
 
 

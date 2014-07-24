@@ -122,15 +122,22 @@ rdsObjectConstructor <- function(rds.sample=NULL,
 ## Testing
 # rdsObjectConstructor()
 
-initializeRdsObject <- function(rds.sample){
+initializeRdsObject <- function(rds.sample, bin=1L){
   ord <- order(rds.sample[,'interviewDt'])
   rds.sample <-rds.sample[ord,] 
+  if(bin>1){
+    cuts <- cut(rds.sample$NS1, breaks = seq(from=0, to = (max(rds.sample$NS1)+bin), by = bin))
+    rds.sample$NS1 <- as.numeric(cuts)
+  }
+    
   I.t <- makeSnowBall(rds.sample)
   result <- rdsObjectConstructor(rds.sample=rds.sample,
                                  I.t = I.t$I.t,
                                  degree.in = I.t$degree.in,
                                  degree.out = I.t$degree.out,
                                  original.ordering = ord)
+  
+  
   
   return(result)
 }
@@ -141,38 +148,6 @@ initializeRdsObject <- function(rds.sample){
 
 
 
-estimate.b.k.2 <- function(k, A.k, B.k, n.k, n.k.count, k.ind){
-  ## Initialize:
-  result <- list(N.k=NA)
-  N.k <- NA
-  
-  target <- function(N.k){
-    const1 <- N.k-(B.k/A.k)
-    pre.const2 <- (N.k - n.k[which(k.ind)-1])
-    
-    # Deal with impossible N.k:
-    if(any(pre.const2<0)) return(-Inf)
-    
-    const2 <- sum(1/pre.const2)
-    const1*const2 - n.k.count
-  }
-  #   xs <- 0:30; plot(y=sapply(xs, target),x=xs, type='h');abline(0,0)
-  
-  roots <- NULL
-  try(roots <- uniroot(f = target, interval =n.k.count*c(1,100)), silent = TRUE)
-  if(length(roots)>1) {
-    result$N.k <- roots$root
-  } else {
-    result$N.k <- n.k.count
-  }
-  
-  result$N.k <- as.integer(ceiling(result$N.k))
-  return(result)
-}
-## Testing:
-# save(n.k, k.ind,A.k, B.k, file='temp/testing_setup.RData')
-# load(file='temp/testing_setup.RData')
-# estimate.b.k.2(k = 3, A.k = A.k, B.k = B.k, n.k =n.k, k.ind = k.ind )
 
 
 
@@ -212,98 +187,38 @@ smoothDegrees <- function(degree.counts){
 
 
 
-
-
-
-
-# estimate beta_k from sampled degrees and snowball matrix:
-estimate.b.k<- function (rds.object, const=1e-4, smooth.degrees.ind=FALSE) {
-  ### Sketch:
-  # Generate estimable parameters vector.
-  # Optimized parameter-wise.
+imputeEstimates <- function(Nk.estimates, n.k.counts, convergence){
+  conv.inds <- as.logical(convergence==0)
+  impute.inds <- as.logical(convergence==1L)
   
-  ### Verifications:
-  if(length(rds.object$estimates)>0) message('Overwriting existing estimates in rds.object.')  
-  
-  ### Initialize:
-  arrival.times <- formatArrivalTimes(rds.object$rds.sample$interviewDt)
-  arrival.intervals <- diff(arrival.times)
-  
-  arrival.degree<- rds.object$rds.sample$NS1
-  max.observed.degree<- max(arrival.degree)
-  degree.counts<- table(arrival.degree)
-  ## Smooth the degree counts before estimation:
-  if(smooth.degrees.ind){degree.counts <- smoothDegrees(degree.counts)}
-    
-  # Sequences per degree
-  I.t <- rds.object$I.t
-  degree.in <- rds.object$degree.in
-  degree.out <- rds.object$degree.out
-  
-  
-  ## Estimate:
-  Nk.estimates<- rep(9999L, max.observed.degree) 
-  log.bk.estiamtes<- rep(NA, max.observed.degree) 
-  A.ks<- rep(NA, max.observed.degree) 
-  B.ks<- rep(NA, max.observed.degree) 
-  n.k.counts<- rep(NA, max.observed.degree)
-  names(Nk.estimates)<- max.observed.degree
-  uniques<- as.integer(names(degree.counts))
-  Nk.estimates[-uniques]<- 0
-  for(k in uniques){
-    # k <- uniques[[1]]
-    k.ind <- arrival.degree==k
-    not.k.ind <- !k.ind
-    
-    # dealing with sample kickoff
-    not.k.ind[1] <- FALSE 
-    k.ind[1] <- FALSE
-    
-    n.k <- cumsum((degree.in==k) - (degree.out==k))
-    n.k.count <- degree.counts[paste(k)]
-    #  tail(cbind(arrival.degree, I.t, n.k, arrival.times))
-    #  head(cbind(arrival.degree[k.ind], I.t[which(k.ind)-1], arrival.times[k.ind]))
-    #  head(cbind(arrival.degree[k.ind], I.t[which(k.ind)-1], arrival.times[k.ind]))
-    
-    A.k <- sum( I.t[which(not.k.ind)-1] *  arrival.times[not.k.ind] )
-    B.k <- sum(n.k[which(not.k.ind)-1] * I.t[which(not.k.ind)-1] *  arrival.times[not.k.ind] )    
-    
-    .temp <- estimate.b.k.2(k=k, A.k=A.k* const, B.k=B.k* const, n.k=n.k, 
-                            n.k.count= n.k.count, k.ind=k.ind)    
-    
-    Nk.estimates[k]<-.temp$N.k
-    log.bk.estiamtes[k] <- log(n.k.count)-log(.temp$N.k *  A.k - B.k)
-    A.ks[k] <- A.k
-    B.ks[k] <- B.k
-    n.k.counts[k] <- n.k.count
+  if( sum(conv.inds, na.rm=TRUE)>2 && any(na.omit(impute.inds))){
+    .data.frame <- na.omit(data.frame(y=Nk.estimates, 
+                                      x=n.k.counts, 
+                                      conv.ind=conv.inds,
+                                      impute.ind=impute.inds))
+    lm.2 <- rlm(y ~ x - 1, data=.data.frame, subset=conv.inds , maxit=100L)
+    Nk.estimates[which(impute.inds)]  <- predict(lm.2, newdata = subset(.data.frame, impute.ind))  
   }
-  
-  result<- list(
-    call=sys.call(),
-    Nk.estimates=Nk.estimates, 
-    log.bk.estimates=log.bk.estiamtes,
-    A.ks=A.ks,
-    B.ks=B.ks,
-    n.k.counts=n.k.counts,
-    arrival.intervals=arrival.intervals,
-    arrival.degree=arrival.degree)
-  
-  return(result)  						
+  return(Nk.estimates)                                                
 }
 
 
 
 
 
+
+
+
 ## Estimate theta assuming beta_k=beta * k^theta:
-getTheta <- function(rds.object, robust=TRUE){
+getTheta <- function(rds.object, bin=1, robust=TRUE){
   nk.estimates <- rds.object$estimates
   
   log.bks <- nk.estimates$log.bk.estimates
-  log.ks <- log(seq_along(log.bks))
+  log.ks <- log(seq_along(log.bks)*bin)
+  ok.inds <- is.finite(log.bks)& !is.na(log.bks)
   
   if(robust) {
-    lm.1 <- rlm(log.bks~log.ks)
+    lm.1 <- rlm(log.bks[ok.inds]~log.ks[ok.inds])
   } else {
     lm.1 <- lm(log.bks~log.ks)
   }
@@ -318,11 +233,8 @@ getTheta <- function(rds.object, robust=TRUE){
 
 
 ## Recovering Nk with smoothed Nk:
-thetaSmoothingNks <- function(rds.object){
-  theta <- getTheta(rds.object, robust = TRUE)
-  theta$theta
-  theta$log.beta_0
-  
+thetaSmoothingNks <- function(rds.object,...){
+  theta <- getTheta(rds.object, ...)
   smooth.bks <- exp(predict(theta$model))
   A.ks <- na.omit(rds.object$estimates$A.ks)
   B.ks <- na.omit(rds.object$estimates$B.ks)
@@ -332,3 +244,53 @@ thetaSmoothingNks <- function(rds.object){
 }
 ## Testing:
 # thetaSmoothingNks(rds.object)
+
+
+
+
+
+
+
+
+likelihood <- function(
+  log.bk, Nk.estimates, I.t, 
+  n.k.counts, degree.in, degree.out, 
+  arrival.intervals, arrival.degree, const=10){
+  ### Verification:
+  
+  ### Initialization:
+  uniques <- which(!is.na(n.k.counts))
+  n.k.t <- makeNKT(uniques, degree.in, degree.out)
+  betas <- exp(log.bk)
+  
+  
+  ## Computation
+  result <- 0.
+  for(i in seq_along(arrival.intervals)){
+    if(i==1) next()
+    for(j in seq_along(uniques)){ 
+      #       i <- 5; j <- 5
+      k <- uniques[[j]]
+      lambda <-  betas[k] * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
+      lamda <- max(lambda, .Machine$double.eps) 
+      
+      A <- ifelse(arrival.degree[i]==j, log(lambda + exp(const)), 0) 
+      B <- ifelse(arrival.degree[i]!=j, lambda * arrival.intervals[i]* const, 0) 
+      result <- result + A - B 
+    }
+  }
+  result <- -result/const
+  return(result)
+}
+## Testing:
+# theta_0 <- getTheta(rds.object)
+# beta <- exp(theta_0$log.beta_0)
+# theta <- theta_0$theta
+# chords:::likelihood(beta, theta, 
+#                     rds.object$estimates$Nk.estimates, 
+#                     rds.object$I.t, 
+#                     rds.object$estimates$n.k.counts, 
+#                     rds.object$degree.in, 
+#                     rds.object$degree.out, 
+#                     rds.object$estimates$arrival.intervals, 
+#                     rds.object$estimates$arrival.degree)

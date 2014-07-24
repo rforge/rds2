@@ -13,10 +13,7 @@ makeNKT <- function(uniques, degree.in, degree.out){
 ## Testing:
 # makeNKT(uniques, degree.in, degree.out)
 
-
-
-
-likelihood <- function(
+likelihoodTheta <- function(
   beta, theta, Nk.estimates, I.t, 
   n.k.counts, degree.in, degree.out, 
   arrival.intervals, arrival.degree, const=10){
@@ -33,21 +30,21 @@ likelihood <- function(
     for(j in seq_along(uniques)){ 
       #       i <- 5; j <- 5
       k <- uniques[[j]]
-      lambda <-  k^theta * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
+      lambda <- beta * k^theta * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
       lamda <- max(lambda, .Machine$double.eps) 
       
-      A <- ifelse(arrival.degree[i]==j, log(lambda+exp(const)), 0) 
+      A <- ifelse(arrival.degree[i]==j, log(lambda + exp(const)), 0) 
       B <- ifelse(arrival.degree[i]!=j, lambda * arrival.intervals[i], 0) * const
-      result <- result + A-B 
+      result <- result + A - B 
     }
   }
-  return(result)
+  return(result/const)
 }
 ## Testing:
 # theta_0 <- getTheta(rds.object)
 # beta <- exp(theta_0$log.beta_0)
 # theta <- theta_0$theta
-# chords:::likelihood(beta, theta, 
+# chords:::likelihoodTheta(beta, theta, 
 #                     rds.object$estimates$Nk.estimates, 
 #                     rds.object$I.t, 
 #                     rds.object$estimates$n.k.counts, 
@@ -55,6 +52,11 @@ likelihood <- function(
 #                     rds.object$degree.out, 
 #                     rds.object$estimates$arrival.intervals, 
 #                     rds.object$estimates$arrival.degree)
+
+
+
+
+
 
 wrap.likelihood <- function(beta, theta, N.k, rds.object){
   I.t <- rds.object$I.t
@@ -64,16 +66,16 @@ wrap.likelihood <- function(beta, theta, N.k, rds.object){
   arrival.intervals <- rds.object$estimates$arrival.intervals
   arrival.degree <- rds.object$estimates$arrival.degree
   
-  likelihood(beta, theta, N.k, I.t, 
+  likelihoodTheta(beta, theta, N.k, I.t, 
              n.k.counts, degree.in, degree.out, arrival.intervals, arrival.degree)
   
 }
 ##Testing:
-# likelihood <- chords:::likelihood
-# wrap.likelihood(beta, theta, rds.object$estimates$Nk.estimates, rds.object )
+# likelihoodTheta <- chords:::likelihoodTheta
+# chords:::wrap.likelihood(beta, theta, rds.object$estimates$Nk.estimates, rds.object )
 
 
-estimate.b.theta <-function(rds.object){
+estimate.b.theta <-function(rds.object,...){
   
   theta_0 <- getTheta(rds.object)
   beta <- exp(theta_0$log.beta_0)
@@ -104,7 +106,7 @@ estimate.b.theta <-function(rds.object){
             theta.converted=theta.f(theta), 
             Nks.converted=N.k.f(N.k[N.k.ind]))
   
-  optimal <- optim(par =init ,fn = target, control=list(maxit=5e3), method = )  
+  optimal <- optim(par =init ,fn = target, ... )  
   
   new.beta <- beta.inv.f(optimal$par[1])
   new.theta <- theta.inv.f(optimal$par[2])
@@ -121,5 +123,7 @@ estimate.b.theta <-function(rds.object){
   return(result)
 } 
 ## Testing:
-# new.estimates <- estimate.b.theta(rds.object)
+# new.estimates <- chords:::estimate.b.theta(rds.object, control=list(maxit=1e3))
+# sum(new.estimates$N.k)
+
 

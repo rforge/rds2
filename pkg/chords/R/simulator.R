@@ -5,7 +5,9 @@ updateLambdas <- function(N.k, n.k, b.k, I.t){
     if(N.k[i]!=0){
       potentials <- N.k[i]-n.k[i]
       if(any(potentials<0)) stop('Impossible n.k value')
-      lambda.k[i] <- b.k[i] * potentials * I.t
+      lambda <- b.k[i] * potentials * I.t
+      
+      lambda.k[i] <- ifelse(is.na(lambda), 0, lambda)
     }
   }
   return(lambda.k)
@@ -91,8 +93,9 @@ compareNkEstimate <- function(object1, object2){
   plot(Nk2, type='h', lwd=2, main='N_k',ylim=c(0,y.lim))
   points(Nk1, col='red', type='h')
   
-  plot(log.bk2, type='h', lwd=2, main='Log beta_ks')
-  points(log.bk1, col='red', type='h')
+#   plot(log.bk2, type='h', lwd=2, main='Log beta_ks')
+#   points(log.bk1, col='red', type='h')
   
-  invisible(mean((Nk2 - Nk1)^2))
+  return(list(max1=max(Nk2/Nk1, na.rm=TRUE),
+              min=min(Nk2/Nk1, na.rm=TRUE)))
 }

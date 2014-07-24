@@ -2,25 +2,25 @@
 \alias{initializeRdsObject}
 
 \title{
-Construct a \code{rds-object} from a data.frame.
+  Construct a \code{rds-object} from a data.frame.
 }
 \description{
 Given a data frame with the appropriate variables, initializes a \code{rds-object} with the components required by the \code{\link{estimate.b.k}} function for estimation.
 }
 \usage{
-initializeRdsObject(rds.sample)
+  initializeRdsObject(rds.sample, bin=1L)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
   \item{rds.sample}{A data frame with required columns. See Details. }
+  \item{bin}{The number of degrees fo bin together. See details.}
 }
 \details{
 The essence of the function is in recovering the sampling snowball required by \code{\link{estimate.b.k}}. 
 The function allows for recruiters to enter and exit the sampling snowball.
 It currently assumes there is a single seed recruiter (the snowball at time 0). This is because the "vanilla" RDS file format does not include recruiter information.
 
-The \code{rds.sample} object is assumed to be a data frame.
-Following the RDS file specification in [TODO: reference], the following column names are assumed:
+The \code{rds.sample} object is assumed to be a data frame with the following column names:
 \enumerate{
 \item{MyUniID}{an identifier of the sampling unit.[not required]}
 \item{NS1}{The reported degree.[required]}
@@ -29,6 +29,8 @@ Following the RDS file specification in [TODO: reference], the following column 
 \item{coupX}{The number of the Xth supplied coupon. NA if none.[not required]}
 \item{interviewDt}{The time of the interview. In numeric representation from some origin. Ties are not allowed.}
 }
+
+If the sample is short, stabilization of degree estimates can be achieved by binning degrees together. This can be done with the \code{bin} argument. Note however that the interpretation of the estimated degree counts is now different as the k'th degree is actually the k'th bin, which is only proportional to \eqn{k}. An exception is the function \code{\link{getTheta}} which also accepts a \code{bin} argument for proper estimation of \eqn{theta}.
 }
 
 \value{

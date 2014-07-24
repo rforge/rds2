@@ -1,7 +1,7 @@
 Package: chords
 Type: Package
 Title: Estimation in respondent driven samples.
-Version: 0.8
+Version: 0.81
 Date: 2014-06-30
 Author: Jonathan Rosenblatt
 Maintainer: Jonathan Rosenblatt <john.ros.work@gmail.com>

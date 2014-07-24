@@ -39,43 +39,26 @@ makeRdsSample(N.k, b.k, sample.length)
  The simulator does not prodice a whole RDS sample, but rather the sufficient statistics required for applying \code{\link{estimate.b.k}}.
 }
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
 
 \seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
+\code{\link{estimate.b.k}}
 }
 \examples{
-##---- Should be DIRECTLY executable !! ----
-##-- ==>  Define data, use random,
-##--	or do  help(data=index)  for the standard data sets.
+# setting up population data:
+col.classes <- c('integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'character')
+f.loc <- paste(path.package('chords'), '/extdata/rds_data_Uganda02.csv',sep='')
+rds.sample<- read.csv(file = f.loc, colClasses=col.classes)
+rds.object<- initializeRdsObject(rds.sample)
+rds.object$estimates <- estimate.b.k(rds.object = rds.object, impute.Nks = FALSE )
 
-## The function is currently defined as
-function (N.k, b.k, sample.length) 
-{
-    n.ks <- rep(0, length(N.k))
-    event.time <- 0
-    I.t <- 1
-    rds.object.simulated <- rdsObjectConstructor(rds.sample = data.frame(NS1 = rep(NA, 
-        sample.length), interviewDt = rep(NA, sample.length)), 
-        I.t = rep(NA, sample.length), degree.in = rep(0, sample.length), 
-        degree.out = rep(0, sample.length))
-    for (period in seq_len(sample.length)) {
-        lambda.k <- updateLambdas(N.k, n.ks, b.k, I.t)
-        time.to.event <- rexp(1, sum(lambda.k))
-        event.time <- event.time + time.to.event
-        rds.object.simulated$rds.sample$interviewDt[period] <- event.time
-        event.type <- rmultinom(1, 1, prob = lambda.k)
-        in.degree <- which(as.logical(event.type))
-        rds.object.simulated$degree.in[period] <- in.degree
-        n.ks <- n.ks + event.type
-        rds.object.simulated$I.t[period] <- I.t
-        I.t <- I.t + 1
-        rds.object.simulated$rds.sample$NS1[period] <- in.degree
-    }
-    return(rds.object.simulated)
-  }
+## Simulating rds.object:
+scaler1 <- 10
+rds.object$estimates$Nk.estimates <- rds.object$estimates$Nk.estimates* scaler1
+rds.simulated.object <- makeRdsSample(
+  N.k =rds.object$estimates$Nk.estimates , 
+  b.k = exp(rds.object$estimates$log.bk.estimates),
+  sample.length = 5e2)
+
+# Estimating with simulated data:
+rds.simulated.object$estimates <- estimate.b.k(rds.object = rds.simulated.object )
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
-\keyword{ ~kwd1 }
-\keyword{ ~kwd2 }% __ONLY ONE__ keyword per line

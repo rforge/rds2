@@ -8,11 +8,12 @@
   Smoothes estimated \eqn{N_k} by assuming that \eqn{beta_k=beta_0 * k^theta}.
 }
 \usage{
-thetaSmoothingNks(rds.object)
+  thetaSmoothingNks(rds.object,...)
 }
 
 \arguments{
   \item{rds.object}{A \code{rds-object} class object as returned by \code{\link{estimate.b.k}}}
+  \item{...}{Firther arguments passed to \code{\link{getTheta}}.}
 }
 
 %\details{
