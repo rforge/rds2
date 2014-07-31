@@ -44,21 +44,17 @@ makeRdsSample(N.k, b.k, sample.length)
 \code{\link{estimate.b.k}}
 }
 \examples{
-# setting up population data:
-col.classes <- c('integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'character')
-f.loc <- paste(path.package('chords'), '/extdata/rds_data_Uganda02.csv',sep='')
-rds.sample<- read.csv(file = f.loc, colClasses=col.classes)
-rds.object<- initializeRdsObject(rds.sample)
-rds.object$estimates <- estimate.b.k(rds.object = rds.object, impute.Nks = FALSE )
-
-## Simulating rds.object:
-scaler1 <- 10
-rds.object$estimates$Nk.estimates <- rds.object$estimates$Nk.estimates* scaler1
+# Generate data:
+true.Nks <- rep(0,100); true.Nks[c(2,100)] <- 1000
+theta <- 1e-1
+true.log.bks <- rep(-Inf, 100);true.log.bks[c(2,100)] <- theta*log(c(2,100))
+sample.length <- 1000L
 rds.simulated.object <- makeRdsSample(
-  N.k =rds.object$estimates$Nk.estimates , 
-  b.k = exp(rds.object$estimates$log.bk.estimates),
-  sample.length = 5e2)
+  N.k =true.Nks , 
+  b.k = exp(true.log.bks),
+  sample.length = sample.length)
 
-# Estimating with simulated data:
+# Estimate:
 rds.simulated.object$estimates <- estimate.b.k(rds.object = rds.simulated.object )
+chords:::compareNkEstimate(rds.simulated.object$estimates$Nk.estimates, true.Nks)
 }

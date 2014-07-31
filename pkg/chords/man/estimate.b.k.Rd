@@ -45,7 +45,8 @@ A list with the following components:
 
 
 \references{
-  [1] Berchenko, Yakir, Jonathan Rosenblatt, and Simon D. W. Frost. "Modeling and Analyzing Respondent Driven Sampling as a Counting Process."" arXiv:1304.3505, April 11, 2013. HTTP://arXiv.org/abs/1304.3505.}
+  [1] Berchenko, Yakir, Jonathan Rosenblatt, and Simon D. W. Frost. "Modeling and Analyzing Respondent Driven Sampling as a Counting Process."" arXiv:1304.3505, April 11, 2013. HTTP://arXiv.org/abs/1304.3505.
+  }
 
 \author{
   Jonathan D. Rosenblatt \email{john.ros.work@gmail.com}
@@ -55,21 +56,23 @@ A list with the following components:
   \code{\link{initializeRdsObject}}, \code{\link{makeRdsSample}}, \code{\link{getTheta}}
 }
 \examples{
-# Import data:
-col.classes <- c('integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'character')
-f.loc <- paste(path.package('chords'), '/extdata/rds_data_Uganda02.csv',sep='')
-rds.sample<- read.csv(file = f.loc, colClasses=col.classes)
+# Import data in RDS file format:
+data(brazil)
+# Initialize RDS object:
+rds.object2<- initializeRdsObject(brazil)
+# Estimate:
+rds.object2$estimates <- estimate.b.k(rds.object = rds.object2 )
 
-## Create big rds object:
-rds.object<- initializeRdsObject(rds.sample)
+# View estimates:
+plot(rds.object2$estimates$Nk.estimates, type='h')
+# Population size estimate:
+sum(rds.object2$estimates$Nk.estimates)
+plot(rds.object2$estimates$log.bk.estimates, type='h')
 
-## Estimate:
-rds.object$estimates <- estimate.b.k(rds.object = rds.object )
-str(rds.object)
-plot(rds.object$estimates$Nk.estimates, type='h')
-plot(rds.object$estimates$log.bk.estimates, type='h')
 
 ## Recover theta assuming b.k=b_0*k^theta
-getTheta(rds.object)
-thetaSmoothingNks(rds.object)
+getTheta(rds.object2)
+
+# How many degrees were imputed?:
+table(rds.object2$estimates$convergence)
 }

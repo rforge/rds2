@@ -123,6 +123,11 @@ rdsObjectConstructor <- function(rds.sample=NULL,
 # rdsObjectConstructor()
 
 initializeRdsObject <- function(rds.sample, bin=1L){
+  ## Verification:
+  if(table(rds.sample[,'interviewDt'])>1) stop('Non unique interview times.')
+  
+  ## Initialization:
+  
   ord <- order(rds.sample[,'interviewDt'])
   rds.sample <-rds.sample[ord,] 
   if(bin>1){
@@ -240,6 +245,11 @@ thetaSmoothingNks <- function(rds.object,...){
   B.ks <- na.omit(rds.object$estimates$B.ks)
   n.k.counts  <- na.omit(rds.object$estimates$n.k.counts)
   smooth.Nks <- (n.k.counts/smooth.bks + B.ks)/A.ks
+  
+  ## FIXME: 
+  # if log.b.ks is infinite, smooth.Nks cannot be computed because
+  # A.ks and B.ks will exist but smooth.bks will not. 
+  
   return(smooth.Nks)
 }
 ## Testing:

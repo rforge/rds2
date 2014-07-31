@@ -65,36 +65,26 @@ makeRdsSample <- function (N.k, b.k, sample.length) {
 # plot(rds.simulated.object$rds.object$rds.sample$interviewDt)
 
 
-compareNkEstimate <- function(object1, object2){
+compareNkEstimate <- function(Nk1, Nk2){
 #     object1 <- nk.estimates.2
 #     object2 <- nk.estimates
   
-  if(length(object1$Nk.estimates) > length(object1$Nk.estimates)) {
-    .temp <- object2
-    object2 <- object1
-    object1 <- .temp
+  if(length(Nk1) > length(Nk2)) {
+    .temp <- Nk2
+    Nk2 <- Nk1
+    Nk1 <- .temp
   }
-  len1 <- length(object1$Nk.estimates)
-  len2 <- length(object2$Nk.estimates)
-  
-  
-  Nk2 <- object2$Nk.estimates
-  Nk1 <- object1$Nk.estimates
-  log.bk1 <- object1$log.bk.estimates
-  log.bk2 <- object2$log.bk.estimates
+  len1 <- length(Nk1)
+  len2 <- length(Nk2)
   
   # Padding if lengths differ:
   if(len1!= len2){
     Nk1[(length(Nk1)+1):len2] <- 0
-    log.bk1[(length(log.bk1)+1):len2] <- 0
   }
 
   y.lim <- max(c(Nk2,Nk1))
   plot(Nk2, type='h', lwd=2, main='N_k',ylim=c(0,y.lim))
   points(Nk1, col='red', type='h')
-  
-#   plot(log.bk2, type='h', lwd=2, main='Log beta_ks')
-#   points(log.bk1, col='red', type='h')
   
   return(list(max1=max(Nk2/Nk1, na.rm=TRUE),
               min=min(Nk2/Nk1, na.rm=TRUE)))

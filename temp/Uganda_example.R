@@ -3,7 +3,7 @@ rm(list=ls())
 
 ## Import RDS file with time stamps
 col.classes <- c('integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'character')
-f.loc <- paste(path.package('chords'), '/extdata/rds_data_Uganda02.csv',sep='')
+f.loc <- paste( '~/Dropbox/RDS/Round2/Uganda/rds_data_Uganda02.csv',sep='')
 rds.sample<- read.csv(file = f.loc, colClasses=col.classes)
 names(rds.sample)
 ## Create big rds object:

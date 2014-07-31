@@ -15,10 +15,11 @@ Given a data frame with the appropriate variables, initializes a \code{rds-objec
   \item{rds.sample}{A data frame with required columns. See Details. }
   \item{bin}{The number of degrees fo bin together. See details.}
 }
+
 \details{
 The essence of the function is in recovering the sampling snowball required by \code{\link{estimate.b.k}}. 
 The function allows for recruiters to enter and exit the sampling snowball.
-It currently assumes there is a single seed recruiter (the snowball at time 0). This is because the "vanilla" RDS file format does not include recruiter information.
+It currently assumes there is a single seed recruiter (the snowball at time 0). This is because the "vanilla" RDS files do not include seed information.
 
 The \code{rds.sample} object is assumed to be a data frame with the following column names:
 \enumerate{
