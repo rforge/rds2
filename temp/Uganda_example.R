@@ -6,8 +6,17 @@ col.classes <- c('integer', 'integer', 'integer', 'integer', 'integer', 'integer
 f.loc <- paste( '~/Dropbox/RDS/Round2/Uganda/rds_data_Uganda02.csv',sep='')
 rds.sample<- read.csv(file = f.loc, colClasses=col.classes)
 names(rds.sample)
+
+# Fix ties:
+ties <- (table(rds.sample$interviewDt)>1) %>% 
+  which %>%
+  names
+tie.inds <- which(rds.object$rds.sample$interviewDt==ties)
+
 ## Create big rds object:
-rds.object<- initializeRdsObject(rds.sample)
+rds.object<- initializeRdsObject(rds.sample, seeds = 10)
+
+
 
 ## Do N.k estimation:
 rds.object$estimates <- estimate.b.k(rds.object = rds.object )

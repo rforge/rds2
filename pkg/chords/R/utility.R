@@ -35,12 +35,12 @@ findRecruiter <- function(active.coupons, coupon){
 
 
 
-makeSnowBall <- function(rds.sample){
+makeSnowBall <- function(rds.sample, seeds){
   coupon.inds <- grepl('coup[0-9]*', names(rds.sample))
 #   sample.length <- ncol(rds.sample)
   
   I.t <- rep(NA, nrow(rds.sample))
-  I.t[1] <- 1
+  I.t[1] <- seeds
   degree.in <- rep(0, nrow(rds.sample))
   degree.out <- rep(0, nrow(rds.sample))
   active.coupons <- list()
@@ -122,9 +122,9 @@ rdsObjectConstructor <- function(rds.sample=NULL,
 ## Testing
 # rdsObjectConstructor()
 
-initializeRdsObject <- function(rds.sample, bin=1L){
+initializeRdsObject <- function(rds.sample, bin=1L, seeds=1L){
   ## Verification:
-  if(table(rds.sample[,'interviewDt'])>1) stop('Non unique interview times.')
+  if(any(table(rds.sample[,'interviewDt'])>1)) warning('Non unique interview times.')
   
   ## Initialization:
   
@@ -135,7 +135,7 @@ initializeRdsObject <- function(rds.sample, bin=1L){
     rds.sample$NS1 <- as.numeric(cuts)
   }
     
-  I.t <- makeSnowBall(rds.sample)
+  I.t <- makeSnowBall(rds.sample, seeds=seeds)
   result <- rdsObjectConstructor(rds.sample=rds.sample,
                                  I.t = I.t$I.t,
                                  degree.in = I.t$degree.in,
