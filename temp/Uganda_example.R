@@ -14,8 +14,7 @@ ties <- (table(rds.sample$interviewDt)>1) %>%
 tie.inds <- which(rds.sample$interviewDt==ties)
 
 ## Create big rds object:
-rds.object<- initializeRdsObject(rds.sample, seeds = 7)
-
+rds.object<- initializeRdsObject(rds.sample, seeds = 9)
 
 
 ## Do N.k estimation:

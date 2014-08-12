@@ -85,11 +85,7 @@ estimate.b.k<- function (rds.object,
   for(k in uniques){
     # k <- uniques[[1]]
     k.ind <- arrival.degree==k
-    not.k.ind <- !k.ind
-    
-    # dealing with sample kickoff
-    not.k.ind[1] <- FALSE 
-    k.ind[1] <- FALSE
+    k.ind[1] <- FALSE # dealing with sample kickoff
     
     n.k <- cumsum((arrival.degree==k))
     #     n.k <- cumsum((degree.in==k) - (degree.out==k))
@@ -99,14 +95,15 @@ estimate.b.k<- function (rds.object,
     #     head(cbind(arrival.degree[k.ind], n.k[k.ind], I.t[k.ind], arrival.intervals[k.ind]))
     #     head(cbind(arrival.degree[k.ind], n.k[which(k.ind)-1], I.t[which(k.ind)-1], arrival.intervals[k.ind]))
     
-    A.k <- sum( I.t[which(not.k.ind)-1] * arrival.intervals[not.k.ind], na.rm=TRUE)
-    B.k <- sum( I.t[which(not.k.ind)-1] * arrival.intervals[not.k.ind] * n.k[which(not.k.ind)-1], na.rm=TRUE)    
+    ## FIXME: this is not the right formula!
+    A.k <- sum( I.t[-1] * arrival.intervals, na.rm=TRUE)
+    B.k <- sum( I.t[-1] * arrival.intervals * n.k[-1], na.rm=TRUE)    
     
     .temp <- estimate.b.k.2(k=k, A.k=A.k*const, B.k=B.k*const, n.k=n.k, 
                             n.k.count= n.k.count, k.ind=k.ind)    
     
     Nk.estimates[k]<-.temp$N.k
-    log.bk.estiamtes[k] <- log(n.k.count)-log(.temp$N.k *  A.k - B.k)
+    log.bk.estiamtes[k] <- log(n.k.count) - log(.temp$N.k *  A.k - B.k)
     A.ks[k] <- A.k
     B.ks[k] <- B.k
     n.k.counts[k] <- n.k.count

@@ -7,7 +7,7 @@ library(magrittr)
 # source('temp/Uganda_example.R')
 
 
-brazil.csv <- read.csv(file='~/Dropbox/RDS/Round2/Brazil/multiplier.csv', stringsAsFactors=FALSE)
+brazil.csv <- read.csv(file='~/Dropbox/RDS/Round2/Brazil/raw/multiplier.csv', stringsAsFactors=FALSE)
 brazil.csv2 <- tbl_df(brazil.csv)
 
 table(table(brazil.csv2$interview.date))
@@ -22,7 +22,7 @@ names(brazil.csv3) <- c("MyUniID", "NS1", "refCoupNum", "coup1", "coup2", "coup3
 brazil.csv3$interviewDt2 <- brazil.csv3$interviewDt
 brazil.csv3$interviewDt <- as.character(brazil.csv3$interviewDt) %>%  dmy %>% unclass
 
-write.table(brazil.csv3, file='pkg/chords/data/brazil.tab', row.names=FALSE)
+# write.table(brazil.csv3, file='pkg/chords/data/brazil.tab', row.names=FALSE)
 
 #----------- Analyzing --------------#
 rm(list=ls())
