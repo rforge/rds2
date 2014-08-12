@@ -52,7 +52,9 @@ estimate.b.k<- function (rds.object,
   
   
   ### Verifications:
-  if(length(rds.object$estimates)>0) message('Overwriting existing estimates in rds.object.')  
+  if(length(rds.object$estimates)>0) {
+    message('Overwriting existing estimates in rds.object.')  
+  }
   
   ### Initialize:
   arrival.times <- formatArrivalTimes(rds.object$rds.sample$interviewDt)
@@ -60,6 +62,7 @@ estimate.b.k<- function (rds.object,
   
   arrival.degree<- rds.object$rds.sample$NS1
   max.observed.degree<- max(arrival.degree)
+  ## TODO: should the degree of the first (seed) be removed?
   degree.counts<- table(arrival.degree)
   
   # Sequences per degree
@@ -68,8 +71,6 @@ estimate.b.k<- function (rds.object,
   degree.out <- rds.object$degree.out
   
   likelihood <- NA
-  
-  
   
   ### Estimate:
   Nk.estimates<- rep(9999L, max.observed.degree) 
@@ -92,12 +93,12 @@ estimate.b.k<- function (rds.object,
     n.k.count <- degree.counts[paste(k)]
     
     #     head(cbind(arrival.degree, n.k, I.t, arrival.intervals),20)
-    #     head(cbind(arrival.degree[k.ind], n.k[k.ind], I.t[k.ind], arrival.intervals[k.ind]))
-    #     head(cbind(arrival.degree[k.ind], n.k[which(k.ind)-1], I.t[which(k.ind)-1], arrival.intervals[k.ind]))
+    #     head(cbind(arrival.degree[-1], n.k[-1], I.t[-1], arrival.intervals))
+    #     head(cbind(arrival.degree[-1], head(n.k,-1), head(I.t,-1), arrival.intervals))
     
     ## FIXME: this is not the right formula!
-    A.k <- sum( I.t[-1] * arrival.intervals, na.rm=TRUE)
-    B.k <- sum( I.t[-1] * arrival.intervals * n.k[-1], na.rm=TRUE)    
+    A.k <- sum( head(I.t,-1) * arrival.intervals, na.rm=TRUE)
+    B.k <- sum( head(I.t,-1) * arrival.intervals * head(n.k,-1), na.rm=TRUE)    
     
     .temp <- estimate.b.k.2(k=k, A.k=A.k*const, B.k=B.k*const, n.k=n.k, 
                             n.k.count= n.k.count, k.ind=k.ind)    

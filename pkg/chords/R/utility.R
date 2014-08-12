@@ -42,6 +42,7 @@ makeSnowBall <- function(rds.sample, seeds){
   I.t <- rep(NA, nrow(rds.sample))
   I.t[1] <- seeds
   degree.in <- rep(0, nrow(rds.sample))
+degree.in[1] <- rds.sample[1, 'NS1']
   degree.out <- rep(0, nrow(rds.sample))
   active.coupons <- list()
   for(period in 2:length(I.t)){

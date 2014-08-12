@@ -23,11 +23,6 @@ sum(rds.object$estimates$Nk.estimates)
 plot(table(rds.object$rds.sample$NS1))
 plot(rds.object$estimates$Nk.estimates, type='h')
 
-# Are the inter-arrival times exponential?
-qs <- length(rds.object$estimates$arrival.intervals) %>% function(x) (1:x)/x
-ys <- 1/median(rds.object$estimates$arrival.intervals) %>% qexp(qs, rate = .)
-qqplot(x=rds.object$estimates$arrival.intervals, y=ys)
-
 
 ## Use b_k=beta*k^theta to smooth population size:
 getTheta(rds.object, robust=TRUE)$theta

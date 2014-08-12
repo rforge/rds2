@@ -4,7 +4,7 @@ rm(list=ls())
 ## Repeat and compute average MSE:
 
 true.Nks <- rep(0,100); true.Nks[c(2,100)] <- 1000
-theta <- 1
+theta <- 1e-1
 true.log.bks <- rep(-Inf, 100)
 true.log.bks[c(2,100)] <- theta*log(c(2,100))
 sample.length <- 1000L
