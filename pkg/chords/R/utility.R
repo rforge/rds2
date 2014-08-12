@@ -124,7 +124,7 @@ rdsObjectConstructor <- function(rds.sample=NULL,
 
 initializeRdsObject <- function(rds.sample, bin=1L, seeds=1L){
   ## Verification:
-  if(any(table(rds.sample[,'interviewDt'])>1)) warning('Non unique interview times.')
+  if(any(table(rds.sample[,'interviewDt'])>1)) warning('Non unique interview times. Ignoring and proceeding...')
   
   ## Initialization:
   
@@ -282,7 +282,7 @@ likelihood <- function(
       #       i <- 5; j <- 5
       k <- uniques[[j]]
       lambda <-  betas[k] * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
-      lamda <- max(lambda, .Machine$double.eps) 
+      lambda <- max(lambda, .Machine$double.eps) 
       
       A <- ifelse(arrival.degree[i]==j, log(lambda + exp(const)), 0) 
       B <- ifelse(arrival.degree[i]!=j, lambda * arrival.intervals[i]* const, 0) 

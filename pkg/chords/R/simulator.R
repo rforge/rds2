@@ -13,14 +13,13 @@ updateLambdas <- function(N.k, n.k, b.k, I.t){
   return(lambda.k)
 }
 ## Testing:
-# N.k <- nk.estimates$Nk.estimates
-# b.k <- exp(nk.estimates$log.bk.estimates)
-# plot(lambda.k <- chords:::updateLambdas(
-#          N.k =N.k ,
-#          n.k = rep(0, length.out = length(N.k)), 
-#          b.k =b.k ,
-#          I.t=1), 
-#      type='h')
+# example(makeRdsSample)
+# lambda.k <- chords:::updateLambdas(
+#   N.k =true.Nks ,
+#   n.k = rep(0, length.out = length(true.Nks)), 
+#   b.k =true.log.bks+log(100) ,
+#   I.t=1)
+# plot(lambda.k, type='h')
 
 
 

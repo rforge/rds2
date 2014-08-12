@@ -18,8 +18,8 @@ likelihoodTheta <- function(
   n.k.counts, degree.in, degree.out, 
   arrival.intervals, arrival.degree, const=10){
   ## Verification:
-  if(beta<.Machine$double.eps) stop('beta below machine percision.')
-  
+  if(beta < .Machine$double.eps) stop('beta below machine percision.')
+  #   if(theta<0) debug()
   ## Computation
   log.beta <- log(beta)
   uniques <- which(!is.na(n.k.counts))
@@ -31,7 +31,7 @@ likelihoodTheta <- function(
       #       i <- 5; j <- 5
       k <- uniques[[j]]
       lambda <- beta * k^theta * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
-      lamda <- max(lambda, .Machine$double.eps) 
+      lambda <- max(lambda, .Machine$double.eps) 
       
       A <- ifelse(arrival.degree[i]==j, log(lambda + exp(const)), 0) 
       B <- ifelse(arrival.degree[i]!=j, lambda * arrival.intervals[i], 0) * const
@@ -86,8 +86,8 @@ estimate.b.theta <-function(rds.object,...){
   beta.f <- function(beta) beta
   beta.inv.f <- function(beta.converted) beta.converted 
   
-  theta.f <- function(theta) log(theta)
-  theta.inv.f <- function(theta.converted) exp(theta.converted)
+  theta.f <- function(theta) (theta)
+  theta.inv.f <- function(theta.converted) (theta.converted)
   
   N.k.f <- function(N.k) log(N.k)
   N.k.inv.f <- function(N.k.converted) exp(N.k.converted)
@@ -98,14 +98,14 @@ estimate.b.theta <-function(rds.object,...){
     theta <- theta.inv.f(x[2])
     N.k <- rep(0, length(N.k.ind))
     N.k[N.k.ind] <- N.k.inv.f(x[-c(1,2)])
-    try(result <- -wrap.likelihood(beta, theta, N.k, rds.object))
+    try(result <- -wrap.likelihood(beta, theta, N.k, rds.object), silent = TRUE)
     return(result)
   }
   
   init <- c(beta.converted=beta.f(theta),
             theta.converted=theta.f(theta), 
             Nks.converted=N.k.f(N.k[N.k.ind]))
-  
+# target(init)
   optimal <- optim(par =init ,fn = target, ... )  
   
   new.beta <- beta.inv.f(optimal$par[1])

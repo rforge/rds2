@@ -73,7 +73,7 @@ estimate.b.k<- function (rds.object,
   
   ### Estimate:
   Nk.estimates<- rep(9999L, max.observed.degree) 
-  names(Nk.estimates)<- max.observed.degree
+  names(Nk.estimates)<- seq_len(max.observed.degree)
   log.bk.estiamtes<- rep(NA, max.observed.degree) 
   A.ks<- rep(NA, max.observed.degree) 
   B.ks<- rep(NA, max.observed.degree) 

@@ -11,10 +11,10 @@ names(rds.sample)
 ties <- (table(rds.sample$interviewDt)>1) %>% 
   which %>%
   names
-tie.inds <- which(rds.object$rds.sample$interviewDt==ties)
+tie.inds <- which(rds.sample$interviewDt==ties)
 
 ## Create big rds object:
-rds.object<- initializeRdsObject(rds.sample, seeds = 10)
+rds.object<- initializeRdsObject(rds.sample, seeds = 7)
 
 
 
@@ -31,11 +31,13 @@ qqplot(x=rds.object$estimates$arrival.intervals, y=ys)
 
 
 ## Use b_k=beta*k^theta to smooth population size:
-getTheta(rds.object, robust=TRUE)
+getTheta(rds.object, robust=TRUE)$theta
 sum(thetaSmoothingNks(rds.object, robust=TRUE))
 
 
 
+#----- Proceed to maximum likelihood estimation---------#
+# chords:::estimate.b.theta(rds.object)
 
 
 
