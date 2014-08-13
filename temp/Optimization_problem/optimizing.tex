@@ -13,7 +13,7 @@ The log likelihood:
 	l(\bm{\beta},\bm{N}; \bm{t}) &=
 	\sum_{t_i \in \bm t} \sum_{j=1}^\infty \left[
 		I\{ x_{t_i} = j \} \log(\lambda_{j,t_i}) -
-		I\{ x_{t_i} \neq j  \} \lambda_{j,t_i} \Delta_i
+		\lambda_{j,t_i} \Delta_i
 	\right]	
 \end{align*}
 
@@ -27,7 +27,7 @@ By differentiating w.r.t. $N_k$:
 \begin{align}\label{eq:Nk_FOC}
 \begin{split}
 	\sum_{t_i:x_{t_i}=k} \frac{1}{N_k - n_{k,t_i}} &= A_k \beta_k \\
-	A_k &:= \sum_{t_i: x_{t_i} \neq k} I_{t_i} \Delta_i
+	A_k &:= \sum_{t_i \in \bm t} I_{t_i} \Delta_i
 \end{split}
 \end{align}
 
@@ -36,7 +36,7 @@ By differentiating w.r.t. $\beta_k$
 \begin{split}
 	n_k &= \beta_k [ N_k A- B ] \\
 	n_k &:= \sum_{t_i:x_{t_i}=k} 1 \\
-	B_k &:= \sum_{t_i: x_{t_i} \neq k} I_{t_i} \, n_{k,t_i} \, \Delta_i.
+	B_k &:= \sum_{t_i \in \bm t} I_{t_i} \, n_{k,t_i} \, \Delta_i.
 \end{split}
 \end{align}
 

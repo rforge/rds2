@@ -261,8 +261,6 @@ thetaSmoothingNks <- function(rds.object,...){
 
 
 
-
-
 likelihood <- function(
   log.bk, Nk.estimates, I.t, 
   n.k.counts, degree.in, degree.out, 
@@ -286,7 +284,7 @@ likelihood <- function(
       lambda <- max(lambda, .Machine$double.eps) 
       
       A <- ifelse(arrival.degree[i]==j, log(lambda + exp(const)), 0) 
-      B <- ifelse(arrival.degree[i]!=j, lambda * arrival.intervals[i]* const, 0) 
+      B <- lambda * arrival.intervals[i]* const 
       result <- result + A - B 
     }
   }
