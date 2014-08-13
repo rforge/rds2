@@ -18,8 +18,9 @@ estimate.b.k.2 <- function(k, A.k, B.k, n.k, n.k.count, k.ind){
   #   xs <- 0:1000; ys <- sapply(xs, target);   range(ys[is.finite(ys)])
   #   plot(y=ys,x=xs, type='h');abline(0,0)
   #   target(n.k.count)
-  #   target(n.k.count*10000)
-  try(roots <- uniroot(f = target, interval =n.k.count*c(1,100)), silent = TRUE)
+  #   target(n.k.count*100)
+  .interval <- n.k.count*c(1, 10*max(1,1/A.k))
+  try(roots <- uniroot(f = target, interval =.interval), silent = TRUE)
   
   if(length(roots)>1) {
     result$N.k <- roots$root
