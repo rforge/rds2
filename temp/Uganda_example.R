@@ -3,18 +3,19 @@ rm(list=ls())
 
 ## Import RDS file with time stamps
 col.classes <- c('integer', 'integer', 'integer', 'integer', 'integer', 'integer', 'character')
-f.loc <- paste( '~/Dropbox/RDS/Round2/Uganda/rds_data_Uganda02.csv',sep='')
+f.loc <- paste( '~/Dropbox/RDS/RDS_shared/Uganda_example/rds_data_Uganda02.csv',sep='')
 rds.sample<- read.csv(file = f.loc, colClasses=col.classes)
 names(rds.sample)
 
-# Fix ties:
+# Mark tied arrival times:
 ties <- (table(rds.sample$interviewDt)>1) %>% 
   which %>%
   names
 tie.inds <- which(rds.sample$interviewDt==ties)
 
 ## Create big rds object:
-rds.object<- initializeRdsObject(rds.sample, seeds = 9)
+rds.object<- initializeRdsObject(rds.sample, seeds = 1)
+plot(rds.object$I.t, type='h', col='grey')
 
 
 ## Do N.k estimation:
@@ -31,13 +32,13 @@ sum(thetaSmoothingNks(rds.object, robust=TRUE))
 
 
 #----- Proceed to maximum likelihood estimation---------#
-# chords:::estimate.b.theta(rds.object)
+#  chords:::estimate.b.theta(rds.object)
 
 
 
 #---- Aggregate degrees to lower variance -----#
 
-bin <- 3
+bin <- 7
 rds.object2<- initializeRdsObject(rds.sample, bin = bin)
 rds.object$estimates <- estimate.b.k(rds.object = rds.object2 )
 sum(rds.object$estimates$Nk.estimates)

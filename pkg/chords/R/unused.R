@@ -16,7 +16,7 @@ makeNKT <- function(uniques, degree.in, degree.out){
 likelihoodTheta <- function(
   beta, theta, Nk.estimates, I.t, 
   n.k.counts, degree.in, degree.out, 
-  arrival.intervals, arrival.degree, const=10){
+  arrival.intervals, arrival.degree){
   ## Verification:
   if(beta < .Machine$double.eps) stop('beta below machine percision.')
   #   if(theta<0) debug()
@@ -29,29 +29,31 @@ likelihoodTheta <- function(
     if(i==1) next()
     for(j in seq_along(uniques)){ 
       #       i <- 5; j <- 5
+      #       i <- 5; j <- 5
       k <- uniques[[j]]
-      lambda <- beta * k^theta * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
+      lambda <-  beta * theta^k * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
       lambda <- max(lambda, .Machine$double.eps) 
       
-      A <- ifelse(arrival.degree[i]==j, log(lambda + exp(const)), 0) 
-      B <- lambda * arrival.intervals[i] * const
+      A <- ifelse(arrival.degree[i]==k, log(lambda), 0) 
+      B <- lambda * arrival.intervals[i-1] 
       result <- result + A - B 
     }
   }
-  return(result/const)
+  return(result)
 }
 ## Testing:
-# theta_0 <- getTheta(rds.object)
+# example(estimate.b.k)
+# theta_0 <- getTheta(rds.object2)
 # beta <- exp(theta_0$log.beta_0)
 # theta <- theta_0$theta
 # chords:::likelihoodTheta(beta, theta, 
-#                     rds.object$estimates$Nk.estimates, 
-#                     rds.object$I.t, 
-#                     rds.object$estimates$n.k.counts, 
-#                     rds.object$degree.in, 
-#                     rds.object$degree.out, 
-#                     rds.object$estimates$arrival.intervals, 
-#                     rds.object$estimates$arrival.degree)
+#                     rds.object2$estimates$Nk.estimates, 
+#                     rds.object2$I.t, 
+#                     rds.object2$estimates$n.k.counts, 
+#                     rds.object2$degree.in, 
+#                     rds.object2$degree.out, 
+#                     rds.object2$estimates$arrival.intervals, 
+#                     rds.object2$estimates$arrival.degree)
 
 
 
@@ -76,15 +78,15 @@ wrap.likelihood <- function(beta, theta, N.k, rds.object){
 
 
 estimate.b.theta <-function(rds.object,...){
-  
+  ## Initialize:  
   theta_0 <- getTheta(rds.object)
   beta <- exp(theta_0$log.beta_0)
   theta <- theta_0$theta
   N.k <- rds.object$estimates$Nk.estimates
   N.k.ind <- N.k!=0
   
-  beta.f <- function(beta) beta
-  beta.inv.f <- function(beta.converted) beta.converted 
+  beta.f <- function(beta) log(beta)
+  beta.inv.f <- function(beta.converted) exp(beta.converted )
   
   theta.f <- function(theta) (theta)
   theta.inv.f <- function(theta.converted) (theta.converted)
