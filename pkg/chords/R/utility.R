@@ -264,7 +264,7 @@ thetaSmoothingNks <- function(rds.object,...){
 likelihood <- function(
   log.bk, Nk.estimates, I.t, 
   n.k.counts, degree.in, degree.out, 
-  arrival.intervals, arrival.degree, const=10){
+  arrival.intervals, arrival.degree){
   ### Verification:
   
   ### Initialization:
@@ -275,7 +275,7 @@ likelihood <- function(
   
   ## Computation
   result <- 0.
-  for(i in seq_along(arrival.intervals)){
+  for(i in seq_along(arrival.degree)){
     if(i==1) next()
     for(j in seq_along(uniques)){ 
       #       i <- 5; j <- 5
@@ -283,23 +283,22 @@ likelihood <- function(
       lambda <-  betas[k] * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
       lambda <- max(lambda, .Machine$double.eps) 
       
-      A <- ifelse(arrival.degree[i]==j, log(lambda + exp(const)), 0) 
-      B <- lambda * arrival.intervals[i]* const 
+      A <- ifelse(arrival.degree[i]==k, log(lambda), 0) 
+      B <- lambda * arrival.intervals[i-1] 
       result <- result + A - B 
     }
   }
-  result <- -result/const
+  result <- -result
   return(result)
 }
 ## Testing:
-# theta_0 <- getTheta(rds.object)
-# beta <- exp(theta_0$log.beta_0)
-# theta <- theta_0$theta
-# chords:::likelihood(beta, theta, 
+# source('temp/Uganda_example.R')
+# chords:::likelihood(rds.object$estimates$log.bk.estimates, 
 #                     rds.object$estimates$Nk.estimates, 
 #                     rds.object$I.t, 
 #                     rds.object$estimates$n.k.counts, 
 #                     rds.object$degree.in, 
 #                     rds.object$degree.out, 
 #                     rds.object$estimates$arrival.intervals, 
-#                     rds.object$estimates$arrival.degree)
+#                     rds.object$estimates$arrival.degree,
+#                     const = 100)

@@ -34,7 +34,7 @@ likelihoodTheta <- function(
       lambda <- max(lambda, .Machine$double.eps) 
       
       A <- ifelse(arrival.degree[i]==j, log(lambda + exp(const)), 0) 
-      B <- ifelse(arrival.degree[i]!=j, lambda * arrival.intervals[i], 0) * const
+      B <- lambda * arrival.intervals[i] * const
       result <- result + A - B 
     }
   }
