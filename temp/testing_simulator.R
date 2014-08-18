@@ -6,7 +6,8 @@ rm(list=ls())
 true.Nks <- rep(0,100); true.Nks[c(2,100)] <- 1000
 theta <- 1e-1
 true.log.bks <- rep(-Inf, 100)
-true.log.bks[c(2,100)] <- theta*log(c(2,100))
+true.beta <- 1
+true.log.bks[c(2,100)] <- theta*log(c(2,100))+log(true.beta)
 sample.length <- 1000L
 
 rds.simulated.object <- makeRdsSample(
@@ -14,14 +15,13 @@ rds.simulated.object <- makeRdsSample(
   b.k = exp(true.log.bks),
   sample.length = sample.length)
 rds.simulated.object$estimates <- estimate.b.k(rds.object = rds.simulated.object )
-rds.simulated.object$estimates$Nk.estimates
 chords:::compareNkEstimate(rds.simulated.object$estimates$Nk.estimates, true.Nks)
 sum(rds.simulated.object$estimates$Nk.estimates)
 getTheta(rds.simulated.object)$theta
 
 
 ## Try maximum likelihood 
-# chords:::estimate.b.theta(rds.simulated.object)
+chords:::estimate.b.theta(rds.simulated.object)
 
 
 true.Nks <- rep(0,100); true.Nks[c(2,100)] <- 1000
