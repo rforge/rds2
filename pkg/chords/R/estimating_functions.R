@@ -64,7 +64,7 @@ estimate.b.k<- function (rds.object,
   arrival.degree<- rds.object$rds.sample$NS1
   max.observed.degree<- max(arrival.degree)
   ## TODO: should the degree of the first (seed) be removed?
-  degree.counts<- table(arrival.degree[-1])
+  degree.counts<- table(arrival.degree)
   
   # Sequences per degree
   I.t <- rds.object$I.t

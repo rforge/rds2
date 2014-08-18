@@ -24,14 +24,15 @@ likelihoodTheta <- function(
   ### Initialization:
   uniques <- which(!is.na(n.k.counts))
   n.k.t <- makeNKT(uniques, degree.in, degree.out)
-  betas <- beta * uniques^theta
-    
+  betas <- beta * uniques ^ theta
+  
+  
   ## Computation
   result <- 0.
   for(i in seq_along(arrival.degree)){
     if(i==1) next()
+  
     for(j in seq_along(uniques)){ 
-      #       i <- 5; j <- 5
       k <- uniques[[j]]
       lambda <-  betas[j] * (Nk.estimates[k] - n.k.t[j,i-1]) * I.t[i-1]
       lambda <- max(lambda, .Machine$double.eps) 
@@ -41,24 +42,11 @@ likelihoodTheta <- function(
       result <- result + A - B 
     }
   }
-  result <- -result
-  return(result)
   
+  return(result)
 }
 ## Testing:
-# example(estimate.b.k)
-# theta_0 <- getTheta(rds.object2)
-# beta <- exp(theta_0$log.beta_0)
-# theta <- theta_0$theta
-# chords:::likelihoodTheta(beta, theta, 
-#                     rds.object2$estimates$Nk.estimates, 
-#                     rds.object2$I.t, 
-#                     rds.object2$estimates$n.k.counts, 
-#                     rds.object2$degree.in, 
-#                     rds.object2$degree.out, 
-#                     rds.object2$estimates$arrival.intervals, 
-#                     rds.object2$estimates$arrival.degree)
-
+## TODO: adapting to Simon's impementation
 
 
 
@@ -105,7 +93,7 @@ estimate.b.theta <-function(rds.object,...){
     theta <- theta.inv.f(x[2])
     N.k <- rep(0, length(N.k.ind))
     N.k[N.k.ind] <- N.k.inv.f(x[-c(1,2)])
-    try(result <- wrap.likelihood(beta, theta, N.k, rds.object), silent = TRUE)
+    try(result <- -wrap.likelihood(beta, theta, N.k, rds.object), silent = TRUE)
     return(result)
   }
   
@@ -125,6 +113,7 @@ estimate.b.theta <-function(rds.object,...){
     beta=new.beta, 
     theta=new.theta, 
     N.k=new.N.k, 
+    likelihood=optimal$value,
     optim.result=optimal)
   
   return(result)

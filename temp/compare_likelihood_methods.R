@@ -22,7 +22,7 @@ log.bks <- log(1:obs.deg)
 Nk.s <- rep(N,obs.deg)
 I.t <- 1:sl
 n.k.counts <- rep(NA, obs.deg)
-.tab <- table(rds.sample$NS1[-1])
+.tab <- table(rds.sample$NS1)
 n.k.counts[as.numeric(names(.tab))]<- .tab
 degree.in <- c(3,rep(obs.deg,sl-1))
 degree.out <- rep(0,sl)
@@ -54,19 +54,21 @@ chords:::likelihood.theta.2(
 
 
 
-# Compute Jonathan's likelihood at some value:
-
+#------ Compute on Simulated data:
+rm(list=ls())
 true.Nks <- rep(0,100); true.Nks[c(2,100)] <- 1000
 theta <- 1e-1
+true.beta <- 1e-1
 true.log.bks <- rep(-Inf, 100)
-true.log.bks[c(2,100)] <- theta*log(c(2,100))
-sample.length <- 1000L
+true.log.bks[c(2,100)] <- theta*log(c(2,100)) + log(true.beta)
+sample.length <- 500
 
 rds.simulated.object <- makeRdsSample(
   N.k =true.Nks, 
   b.k = exp(true.log.bks),
   sample.length = sample.length)
 rds.simulated.object$estimates <- estimate.b.k(rds.simulated.object)
+getTheta(rds.simulated.object)$theta
 
 chords:::likelihood(log.bk = rds.simulated.object$estimates$log.bk.estimates, 
                     Nk.estimates = rds.simulated.object$estimates$Nk.estimates, 
@@ -89,6 +91,43 @@ chords:::likelihood.theta.2(
   arrival.degree = rds.simulated.object$estimates$arrival.degree,
   const = 1)
 
+chords:::likelihoodTheta(true.beta, theta, 
+                         rds.simulated.object$estimates$Nk.estimates, 
+                         rds.simulated.object$I.t, 
+                         rds.simulated.object$estimates$n.k.counts, 
+                         rds.simulated.object$degree.in, 
+                         rds.simulated.object$degree.out, 
+                         rds.simulated.object$estimates$arrival.intervals, 
+                         rds.simulated.object$estimates$arrival.degree) 
+
+
 
 ## Try maximum likelihood 
-chords:::estimate.b.theta(rds.simulated.object)
+rds.simulated.object <- makeRdsSample(
+  N.k =true.Nks, 
+  b.k = exp(true.log.bks),
+  sample.length = sample.length)
+rds.simulated.object$estimates <- estimate.b.k(rds.simulated.object)
+getTheta(rds.simulated.object)$theta
+chords:::estimate.b.theta(rds.simulated.object)$theta
+theta
+
+
+# ------------ Constrained likelihood-----#
+rm(list=ls())
+true.Nks <- rep(0,100); true.Nks[c(2,100)] <- 1000
+theta <- 1e-1
+true.log.bks <- rep(-Inf, 100)
+true.beta <- 1
+true.log.bks[c(2,100)] <- theta*log(c(2,100))+log(true.beta)
+sample.length <- 1000L
+rds.object2 <- makeRdsSample(N.k =true.Nks, b.k = exp(true.log.bks), sample.length = sample.length)
+rds.object2$estimates <- estimate.b.k(rds.object = rds.object2 )
+chords:::likelihoodTheta(true.beta, theta, 
+                         rds.object2$estimates$Nk.estimates, 
+                         rds.object2$I.t, 
+                         rds.object2$estimates$n.k.counts, 
+                         rds.object2$degree.in, 
+                         rds.object2$degree.out, 
+                         rds.object2$estimates$arrival.intervals, 
+                         rds.object2$estimates$arrival.degree) 
