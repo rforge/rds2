@@ -203,7 +203,7 @@ imputeEstimates <- function(Nk.estimates, n.k.counts, convergence){
                                       conv.ind=conv.inds,
                                       impute.ind=impute.inds))
     lm.2 <- rlm(y ~ x - 1, data=.data.frame, subset=conv.inds , maxit=100L)
-    Nk.estimates[which(impute.inds)]  <- predict(lm.2, newdata = subset(.data.frame, impute.ind))  
+    Nk.estimates[which(impute.inds)]  <- predict(lm.2, newdata = subset(.data.frame, impute.inds))  
   }
   return(Nk.estimates)                                                
 }
