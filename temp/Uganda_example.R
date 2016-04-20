@@ -19,7 +19,7 @@ plot(rds.object$I.t, type='h', col='grey')
 
 
 ## Do N.k estimation:
-rds.object$estimates <- estimate.b.k(rds.object = rds.object )
+rds.object$estimates <- estimate.b.k(rds.object = rds.object, impute.Nks = 'jeff')
 sum(rds.object$estimates$Nk.estimates)
 plot(table(rds.object$rds.sample$NS1))
 plot(rds.object$estimates$Nk.estimates, type='h')

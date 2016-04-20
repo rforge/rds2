@@ -1,3 +1,12 @@
+New in version 0.92.1
+----------------------
+
+
+New in version 0.91
+-------------------
+o Added regularization using Jeffrey's prior.
+
+
 New in version 0.9
 ---------------------
 This version is a through redesign of the package and should be seen 

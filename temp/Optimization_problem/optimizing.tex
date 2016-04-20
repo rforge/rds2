@@ -34,7 +34,7 @@ By differentiating w.r.t. $N_k$:
 By differentiating w.r.t. $\beta_k$
 \begin{align}\label{eq:beta_FOC}
 \begin{split}
-	n_k &= \beta_k [ N_k A- B ] \\
+	n_k &= \beta_k [ N_k A_k- B ] \\
 	n_k &:= \sum_{t_i:x_{t_i}=k} 1 \\
 	B_k &:= \sum_{t_i \in \bm t} I_{t_i} \, n_{k,t_i} \, \Delta_i.
 \end{split}
@@ -49,4 +49,14 @@ Solving for $\beta_k$ and plugging in Eq.\ref{eq:Nk_FOC}
 \end{align}
 
 It thus remains to find the root(s) of Eq.\ref{eq:partial_likelihood} to find $\hat{N}_k$ and plug it in Eq~\ref{eq:beta_FOC} to find $\hat{\beta}_k$.
+
+\hrulefill
+\bigskip
+
+Now adding some regularization via Jefrey's prior...
+
+
+
+
+
 \end{document}

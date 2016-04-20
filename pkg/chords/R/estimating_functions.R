@@ -1,36 +1,59 @@
-estimate.b.k.2 <- function(k, A.k, B.k, n.k, n.k.count, k.ind){
+estimate.b.k.2 <- function(k, A.k, B.k, n.k, n.k.count, k.ind, regularize=FALSE, silent){
   ## Initialize:
   result <- list(N.k=NA, converge=FALSE)
   N.k <- NA
   
-  target <- function(N.k){
-    const1 <- N.k-(B.k/A.k)
-    pre.const2 <- (N.k - n.k[which(k.ind)-1])
-    
-    # Deal with impossible N.k:
-    if(any(pre.const2<0)) return(-Inf)
-    
-    const2 <- sum(1/pre.const2)
-    const1*const2 - n.k.count
+  # Unregulirized estimator:
+  if(!regularize){
+    target <- function(N.k){
+      const1 <- N.k - (B.k/A.k)
+      # pre.const2 <- (N.k - n.k[which(k.ind)-1])
+      pre.const2 <- (N.k - seq(0, n.k.count-1))
+      
+      # Deal with impossible N.k:
+      if(any(pre.const2 < 0)) return(-Inf)
+      
+      const2 <- sum(1/pre.const2)
+      const1 * const2 - n.k.count
+    }
+  } 
+  # Regulirized case:
+  else{
+    # Construct target function:
+    target <- function(N.k){
+      const1 <- N.k-(B.k/A.k)
+      # pre.const2 <- (N.k - n.k[which(k.ind)-1])
+      pre.const2 <- (N.k - seq(0, n.k.count-1))
+      
+      # Deal with impossible N.k:
+      if(any(pre.const2<0)) return(-Inf)
+      
+      const2.1 <- sum(1/pre.const2^3)
+      const2.2 <- sum(1/pre.const2^2)
+      const2.3 <- sum(1/pre.const2)
+      const2 <- const2.3 - const2.1/const2.2
+      const1*const2 - n.k.count
+    }
   }
   
+  # Estimate n by finding root of target:
   roots <- NULL
-  #   xs <- 0:1000; ys <- sapply(xs, target);   range(ys[is.finite(ys)])
-  #   plot(y=ys,x=xs, type='h');abline(0,0)
-  #   target(n.k.count)
-  #   target(n.k.count*100)
-  .interval <- n.k.count*c(1, 10*max(1,1/A.k))
-  try(roots <- uniroot(f = target, interval =.interval), silent = TRUE)
+  .interval <- n.k.count * c(1, 10*max(1,1/A.k))
+  try(roots <- uniroot(f = target, interval =.interval, 
+                       extendInt = "no", maxiter = 1e4), silent = silent)
   
-  if(length(roots)>1) {
+  # In case of convergence:
+  if(length(roots)>0) {
     result$N.k <- roots$root
-    result$converge <- 0
-  } else {
-    result$N.k <- n.k.count
-    result$converge <- sign(target(n.k.count))
+    result$converge <- 0 # 0 marks succeful convergence!
+  } 
+  # In case of non convergence:
+  else {
+    result$N.k <- Inf #n.k.count
+    result$converge <- sign(target(.interval[2]))
   }
   
-  result$N.k <- as.integer(ceiling(result$N.k))
+  result$N.k <- ceiling(result$N.k)
   return(result)
 }
 ## Testing:
@@ -45,8 +68,9 @@ estimate.b.k.2 <- function(k, A.k, B.k, n.k, n.k.count, k.ind){
 
 # estimate beta_k from sampled degrees and snowball matrix:
 estimate.b.k<- function (rds.object, 
-                         const=1, 
-                         impute.Nks=TRUE) {
+                         const=1,
+                         impute.Nks='jeff',
+                         silent=TRUE) {
   ### Sketch:
   # Generate estimable parameters vector.
   # Optimized parameter-wise.
@@ -82,6 +106,8 @@ estimate.b.k<- function (rds.object,
   n.k.counts<- rep(NA, max.observed.degree)
   convergence<- rep(NA, max.observed.degree)
   
+  A.k <- sum( head(I.t,-1) * arrival.intervals, na.rm=TRUE)
+  
   uniques<- as.integer(names(degree.counts))
   Nk.estimates[-uniques]<- 0
   for(k in uniques){
@@ -96,25 +122,44 @@ estimate.b.k<- function (rds.object,
     #     head(cbind(arrival.degree, n.k, I.t, arrival.intervals),20)
     #     head(cbind(arrival.degree[-1], n.k[-1], I.t[-1], arrival.intervals))
     #     head(cbind(arrival.degree[-1], head(n.k,-1), head(I.t,-1), arrival.intervals))
-    
-    A.k <- sum( head(I.t,-1) * arrival.intervals, na.rm=TRUE)
     B.k <- sum( head(I.t,-1) * arrival.intervals * head(n.k,-1), na.rm=TRUE)    
     
-    .temp <- estimate.b.k.2(k=k, A.k=A.k*const, B.k=B.k*const, n.k=n.k, 
-                            n.k.count= n.k.count, k.ind=k.ind)    
     
-    Nk.estimates[k]<-.temp$N.k
-    log.bk.estiamtes[k] <- log(n.k.count) - log(.temp$N.k *  A.k - B.k)
+    .temp <- estimate.b.k.2(k=k, 
+                            A.k=A.k*const, 
+                            B.k=B.k*const, 
+                            n.k=n.k, 
+                            n.k.count= n.k.count, 
+                            k.ind=k.ind, 
+                            regularize=FALSE, 
+                            silent = silent)    
+    
+    convergence[k] <- .temp$converge
     A.ks[k] <- A.k
     B.ks[k] <- B.k
     n.k.counts[k] <- n.k.count
-    convergence[k] <- .temp$converge
-  }
+    
+    # Impute using jeffrey's prior:
+    if(impute.Nks=='jeff' && .temp$converge==0){
+      .temp <- estimate.b.k.2(k=k, A.k=A.k*const, B.k=B.k*const, n.k=n.k, 
+                              n.k.count= n.k.count, k.ind=k.ind, 
+                              regularize=TRUE)    
+    }
+    
+    Nk.estimates[k]<-.temp$N.k
+    log.bk.estiamtes[k] <- log(n.k.count) - log(.temp$N.k *  A.k - B.k)
+  } # End looping over estimable degrees.  
   
-  if(impute.Nks) {
+  
+  
+  
+  # Impute using my heuristic:
+  if(impute.Nks=='john') {
     Nk.estimates <- imputeEstimates(Nk.estimates, n.k.counts, convergence)
   }
 
+  
+  
   likelihood.val <- likelihood(log.bk = log.bk.estiamtes, 
                            Nk.estimates = Nk.estimates, 
                            I.t = I.t, 
